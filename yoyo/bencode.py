@@ -56,7 +56,7 @@ def encode(data):
     Args:
         data: 编码数据
     Returns:
-        (string): 编码结果
+        (str): 编码结果
     """
     if isinstance(data, str):
         return _encode_string(data)
@@ -74,10 +74,10 @@ def _decode_string(data, start):
     """becode解码字符串
 
     Args:
-        data (string): 要解码的字符串
+        data (str): 要解码的字符串
         start (int): 解码位置
     Returns:
-        (string): 解码的字符串
+        (str): 解码的字符串
         (int): 下次解码位置
     """
     if start >= len(data) or not data[start].isdigit():
@@ -106,7 +106,7 @@ def _decode_int(data, start):
     """becode解码整数
 
     Args:
-        data (string): 要解码的字符串
+        data (str): 要解码的字符串
         start (int): 解码位置
     Returns:
         (int): 解码的整数
@@ -132,7 +132,7 @@ def _decode_list(data, start):
     """becode解码列表
 
     Args:
-        data (string): 要解码的字符串
+        data (str): 要解码的字符串
         start (int): 解码位置
     Returns:
         (list): 解码的列表
@@ -160,7 +160,7 @@ def _decode_dict(data, start):
     """becode解码字典
 
     Args:
-        data (string): 要解码的字符串
+        data (str): 要解码的字符串
         start (int): 解码位置
     Returns:
         (dict): 解码的字典
@@ -192,7 +192,7 @@ def _decode_item(data, start):
     """becode解码字典
 
     Args:
-        data (string): 要解码的字符串
+        data (str): 要解码的字符串
         start (int): 解码位置
     Returns:
         解码的数据

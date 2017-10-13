@@ -22,7 +22,7 @@ class Blacklist(object):
         """黑名单添加一条记录
 
         Args:
-            ip (string): internet address
+            ip (str): internet address
             port (int): 端口
         """
         key = gen_ip_port_key(ip, port)
@@ -32,7 +32,7 @@ class Blacklist(object):
         """黑名单删除一条记录
 
         Args:
-            ip (string): internet address
+            ip (str): internet address
             port (int): 端口
         """
         key = gen_ip_port_key(ip, port)
@@ -42,7 +42,7 @@ class Blacklist(object):
         """判断是否在黑名单中
 
         Args:
-            ip (string): internet address
+            ip (str): internet address
             port (int): 端口
         """
         if ip in self._blacklist:
