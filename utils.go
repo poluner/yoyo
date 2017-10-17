@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
+	"regexp"
+	"fmt"
 )
+
+var ipPattern = regexp.MustCompile(`\d+\.\d+\.\d+\.\d+`)
 
 // randomString generates a size-length string randomly.
 func randomString(size int) string {
@@ -91,11 +93,12 @@ func getLocalIPs() (ips []string) {
 	}
 
 	for _, addr := range addrs {
-		ip := net.ParseIP(addr.String())
-		if err != nil {
-			continue
+		if ipnet, ok := addr.(*net.IPNet); ok {
+			if ipnet.IP.To4() != nil {
+				ips = append(ips, ipnet.IP.String())
+			}
 		}
-		ips = append(ips, ip.String())
+
 	}
 	return
 }
@@ -103,15 +106,14 @@ func getLocalIPs() (ips []string) {
 // getRemoteIP returns the wlan ip.
 func getRemoteIP() (ip string, err error) {
 	client := &http.Client{
-		Timeout: time.Second * 30,
+		Timeout: time.Second * 10,
 	}
 
-	req, err := http.NewRequest("GET", "http://ifconfig.me", nil)
+	req, err := http.NewRequest("GET", "http://ip.cn", nil)
 	if err != nil {
 		return
 	}
 
-	req.Header.Set("User-Agent", "curl")
 	res, err := client.Do(req)
 	if err != nil {
 		return
@@ -123,12 +125,13 @@ func getRemoteIP() (ip string, err error) {
 	if err != nil {
 		return
 	}
-	ip = string(data[:len(data) - 1])
+
+	ip = string(ipPattern.Find(data))
 
 	return
 }
 
 // genAddress returns a ip:port address.
 func genAddress(ip string, port int) string {
-	return strings.Join([]string{ip, strconv.Itoa(port)}, ":")
+	return fmt.Sprintf("%s:%d", ip, port)
 }

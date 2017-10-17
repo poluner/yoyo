@@ -2,7 +2,6 @@ package yoyo
 
 import (
 	"testing"
-	"fmt"
 )
 
 func TestInt2Bytes(t *testing.T) {
@@ -100,9 +99,19 @@ func TestEncodeCompactIPPortInfo(t *testing.T) {
 	}
 }
 
-func TestGetLocalIPs(t *testing.T) {
-	ips := getLocalIPs()
-	for _, ip := range ips {
-		fmt.Println(ip)
+func TestGenAddress(t *testing.T) {
+	cases := []struct {
+		ip  string
+		port int
+		address string
+	}{
+		{"127.0.0.1",  80, "127.0.0.1:80"},
+		{"127.0.0.1",  0, "127.0.0.1:0"},
+	}
+
+	for _, c := range cases {
+		if addr := genAddress(c.ip, c.port);  addr != c.address {
+			t.Fail()
+		}
 	}
 }
