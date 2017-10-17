@@ -1,6 +1,7 @@
 package yoyo
 
 import (
+	"fmt"
 	"bytes"
 	"errors"
 	"strconv"
@@ -196,12 +197,12 @@ func Decode(data []byte) (result interface{}, err error) {
 
 // EncodeString encodes a string value.
 func EncodeString(data string) string {
-	return strings.Join([]string{strconv.Itoa(len(data)), data}, ":")
+	return fmt.Sprintf("%d:%s", len(data), data)
 }
 
 // EncodeInt encodes a int value.
 func EncodeInt(data int) string {
-	return strings.Join([]string{"i", strconv.Itoa(data), "e"}, "")
+	return fmt.Sprintf("i%de", data)
 }
 
 // EncodeItem encodes an item of dict or list.
@@ -229,7 +230,7 @@ func EncodeList(data []interface{}) string {
 		result[i] = encodeItem(item)
 	}
 
-	return strings.Join([]string{"l", strings.Join(result, ""), "e"}, "")
+	return fmt.Sprintf("l%se", strings.Join(result, ""))
 }
 
 // EncodeDict encodes a dict value.
@@ -237,27 +238,14 @@ func EncodeDict(data map[string]interface{}) string {
 	result, i := make([]string, len(data)), 0
 
 	for key, val := range data {
-		result[i] = strings.Join(
-			[]string{EncodeString(key), encodeItem(val)},
-			"")
+		result[i] = fmt.Sprintf("%s%s", EncodeString(key), encodeItem(val))
 		i++
 	}
 
-	return strings.Join([]string{"d", strings.Join(result, ""), "e"}, "")
+	return fmt.Sprintf("d%se", strings.Join(result, ""))
 }
 
 // Encode encodes a string, int, dict or list value to a bencoded string.
 func Encode(data interface{}) string {
-	switch v := data.(type) {
-	case string:
-		return EncodeString(v)
-	case int:
-		return EncodeInt(v)
-	case []interface{}:
-		return EncodeList(v)
-	case map[string]interface{}:
-		return EncodeDict(v)
-	default:
-		panic("invalid type when encode")
-	}
+	return encodeItem(data)
 }

@@ -157,3 +157,26 @@ func TestDecodeDict(t *testing.T) {
 		}
 	}
 }
+
+func TestEncode(t *testing.T) {
+	cases := []struct {
+		in  interface{}
+		out string
+	}{
+		{1, "i1e"},
+		{-1, "i-1e"},
+		{"", "0:"},
+		{"aaa", "3:aaa"},
+		{[]interface{}{}, "le"},
+		{[]interface{}{1, "a"}, "li1e1:ae"},
+		{map[string]interface{}{}, "de"},
+		{map[string]interface{}{"a": 1, "b": "b"}, "d1:ai1e1:b1:be"},
+		{map[string]interface{}{"a": []interface{}{1, "a", map[string]interface{}{}}}, "d1:ali1e1:adeee"},
+	}
+
+	for _, c := range cases {
+		if out := Encode(c.in);  out != c.out {
+			t.Fail()
+		}
+	}
+}
