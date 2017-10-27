@@ -79,7 +79,7 @@ func encodeCompactIPPortInfo(ip net.IP, port int) (info string, err error) {
 		p[0] = 0
 	}
 
-	info = string(append(ip, p...))
+	info = fmt.Sprintf("%s%s", []byte(ip.To4()), p)
 	return
 }
 

@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"errors"
 	"net"
-	"strings"
 	"sync"
 	"time"
 	"fmt"
@@ -174,12 +173,11 @@ func (bucket *kbucket) LastChanged() time.Time {
 
 // RandomChildID returns a random id that has the same prefix with bucket.
 func (bucket *kbucket) RandomChildID() string {
-	prefixLen := bucket.prefix.Size / 8
-
-	return strings.Join([]string{
-		bucket.prefix.RawString()[:prefixLen],
-		randomString(20 - prefixLen),
-	}, "")
+	randomBitmap := newBitmapFromString(randomString(20))
+	for i := 0; i < bucket.prefix.Size ; i++ {
+		randomBitmap.set(i, bucket.prefix.Bit(i))
+	}
+	return randomBitmap.RawString()
 }
 
 // UpdateTimestamp update bucket's last changed time..
