@@ -57,7 +57,3 @@ func TestPeersManager(t *testing.T) {
 		t.Fail()
 	}
 }
-
-func TestRoutingTable(t *testing.T) {
-
-}
