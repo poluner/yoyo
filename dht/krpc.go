@@ -1,4 +1,4 @@
-package yoyo
+package dht
 
 import (
 	"errors"
@@ -36,33 +36,34 @@ type token struct {
 
 // tokenManager managers the tokens.
 type tokenManager struct {
-	*syncedMap
+	*sync.Mutex
+	data map[string]token
 	expiredAfter time.Duration
-	dht          *DHT
 }
 
 // newTokenManager returns a new tokenManager.
-func newTokenManager(expiredAfter time.Duration, dht *DHT) *tokenManager {
+func newTokenManager(expiredAfter time.Duration) *tokenManager {
 	return &tokenManager{
-		syncedMap:    newSyncedMap(),
+		Mutex: &sync.Mutex{},
+		data: make(map[string]token),
 		expiredAfter: expiredAfter,
-		dht:          dht,
 	}
 }
 
 // token returns a token. If it doesn't exist or is expired, it will add a
 // new token.
 func (tm *tokenManager) token(addr *net.UDPAddr) string {
-	v, ok := tm.Get(addr.IP.String())
-	tk, _ := v.(token)
+	tm.Lock()
+	defer tm.Unlock()
 
+	tk, ok := tm.data[addr.IP.String()]
 	if !ok || time.Now().Sub(tk.createTime) > tm.expiredAfter {
 		tk = token{
-			data:       randomString(5),
+			data: randomString(5),
 			createTime: time.Now(),
 		}
 
-		tm.Set(addr.IP.String(), tk)
+		tm.data[addr.IP.String()] = tk
 	}
 
 	return tk.data
@@ -70,27 +71,34 @@ func (tm *tokenManager) token(addr *net.UDPAddr) string {
 
 // clear removes expired tokens.
 func (tm *tokenManager) clear() {
-	for _ = range time.Tick(time.Minute * 3) {
-		keys := make([]interface{}, 0, 100)
+	for range time.Tick(time.Minute * 3) {
+		tm.Lock()
 
-		for item := range tm.Iter() {
-			if time.Now().Sub(item.val.(token).createTime) > tm.expiredAfter {
-				keys = append(keys, item.key)
+		keys := make([]string, 0, 100)
+		now := time.Now()
+		for key, val := range tm.data {
+			if now.Sub(val.createTime) > tm.expiredAfter {
+				keys = append(keys, key)
 			}
 		}
 
-		tm.DeleteMulti(keys)
+		for _, key := range keys {
+			delete(tm.data, key)
+		}
+		tm.Unlock()
 	}
 }
 
 // check returns whether the token is valid.
 func (tm *tokenManager) check(addr *net.UDPAddr, tokenString string) bool {
+	tm.Lock()
+	defer tm.Unlock()
+
 	key := addr.IP.String()
-	v, ok := tm.Get(key)
-	tk, _ := v.(token)
+	tk, ok := tm.data[key]
 
 	if ok {
-		tm.Delete(key)
+		delete(tm.data, key)
 	}
 
 	return ok && tokenString == tk.data

@@ -1,4 +1,4 @@
-package yoyo
+package dht
 
 import (
 	"fmt"
@@ -20,16 +20,7 @@ func find(data []byte, start int, target rune) (index int) {
 	return index
 }
 
-// DecodeString decodes a string in the data. It returns a tuple
-// (decoded result, the end position, error).
-func DecodeString(data []byte, start int) (
-	result interface{}, index int, err error) {
-
-	if start >= len(data) || data[start] < '0' || data[start] > '9' {
-		err = errors.New("invalid string bencode")
-		return
-	}
-
+func DecodeString(data []byte, start int) (result interface{}, index int, err error) {
 	i := find(data, start, ':')
 	if i == -1 {
 		err = errors.New("':' not found when decode string")
@@ -57,17 +48,8 @@ func DecodeString(data []byte, start int) (
 	return
 }
 
-// DecodeInt decodes int value in the data.
-func DecodeInt(data []byte, start int) (
-	result interface{}, index int, err error) {
-
-	if start >= len(data) || data[start] != 'i' {
-		err = errors.New("invalid int bencode")
-		return
-	}
-
+func DecodeInt(data []byte, start int) (result interface{}, index int, err error) {
 	index = find(data, start+1, 'e')
-
 	if index == -1 {
 		err = errors.New("':' not found when decode int")
 		return
@@ -82,34 +64,35 @@ func DecodeInt(data []byte, start int) (
 	return
 }
 
-// decodeItem decodes an item of dict or list.
-func decodeItem(data []byte, i int) (
-	result interface{}, index int, err error) {
-
-	var decodeFunc = []func([]byte, int) (interface{}, int, error){
-		DecodeString, DecodeInt, DecodeList, DecodeDict,
-	}
-
-	for _, f := range decodeFunc {
-		result, index, err = f(data, i)
-		if err == nil {
-			return
-		}
-	}
-
-	err = errors.New("invalid bencode when decode item")
-	return
-}
-
-// DecodeList decodes a list value.
-func DecodeList(data []byte, start int) (
-	result interface{}, index int, err error) {
-
-	if start >= len(data) || data[start] != 'l' {
-		err = errors.New("invalid list bencode")
+func decodeItem(data []byte, start int) (result interface{}, index int, err error) {
+	if start >= len(data) {
+		err = errors.New("start out of range")
 		return
 	}
 
+	var (
+		decodeFunc func([]byte, int) (interface{}, int, error)
+		startCharacter = data[start]
+	)
+	switch startCharacter {
+	case 'i':
+		decodeFunc = DecodeInt
+	case 'l':
+		decodeFunc = DecodeList
+	case 'd':
+		decodeFunc = DecodeDict
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		decodeFunc = DecodeString
+	default:
+		err = errors.New("invalid bencode when decode item")
+		return
+	}
+
+	result, index, err = decodeFunc(data, start)
+	return
+}
+
+func DecodeList(data []byte, start int) (result interface{}, index int, err error) {
 	var item interface{}
 	r := make([]interface{}, 0, 8)
 
@@ -137,15 +120,7 @@ func DecodeList(data []byte, start int) (
 	return
 }
 
-// DecodeDict decodes a map value.
-func DecodeDict(data []byte, start int) (
-	result interface{}, index int, err error) {
-
-	if start >= len(data) || data[start] != 'd' {
-		err = errors.New("invalid dict bencode")
-		return
-	}
-
+func DecodeDict(data []byte, start int) (result interface{}, index int, err error) {
 	var item, key interface{}
 	r := make(map[string]interface{})
 
@@ -189,23 +164,24 @@ func DecodeDict(data []byte, start int) (
 	return
 }
 
-// Decode decodes a bencoded string to string, int, list or map.
 func Decode(data []byte) (result interface{}, err error) {
+	if data == nil || len(data) == 0 {
+		err = errors.New("decode data empty")
+		return
+	}
+
 	result, _, err = decodeItem(data, 0)
 	return
 }
 
-// EncodeString encodes a string value.
 func EncodeString(data string) string {
 	return fmt.Sprintf("%d:%s", len(data), data)
 }
 
-// EncodeInt encodes a int value.
 func EncodeInt(data int) string {
 	return fmt.Sprintf("i%de", data)
 }
 
-// EncodeItem encodes an item of dict or list.
 func encodeItem(data interface{}) (item string) {
 	switch v := data.(type) {
 	case string:
@@ -222,7 +198,6 @@ func encodeItem(data interface{}) (item string) {
 	return
 }
 
-// EncodeList encodes a list value.
 func EncodeList(data []interface{}) string {
 	result := make([]string, len(data))
 
@@ -233,7 +208,6 @@ func EncodeList(data []interface{}) string {
 	return fmt.Sprintf("l%se", strings.Join(result, ""))
 }
 
-// EncodeDict encodes a dict value.
 func EncodeDict(data map[string]interface{}) string {
 	result, i := make([]string, len(data)), 0
 
@@ -245,7 +219,6 @@ func EncodeDict(data map[string]interface{}) string {
 	return fmt.Sprintf("d%se", strings.Join(result, ""))
 }
 
-// Encode encodes a string, int, dict or list value to a bencoded string.
 func Encode(data interface{}) string {
 	return encodeItem(data)
 }
