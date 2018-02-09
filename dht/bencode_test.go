@@ -175,7 +175,7 @@ func TestEncode(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		if out := Encode(c.in);  out != c.out {
+		if out := Encode(c.in); out != c.out {
 			t.Fail()
 		}
 	}

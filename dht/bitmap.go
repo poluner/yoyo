@@ -1,11 +1,10 @@
-package yoyo
+package dht
 
 import (
 	"fmt"
 	"strings"
 )
 
-// bitmap represents a bit array.
 type bitmap struct {
 	Size int
 	data []byte
@@ -30,7 +29,6 @@ func newBitmapFrom(other *bitmap, size int) *bitmap {
 	}
 
 	div := size / 8
-
 	for i := 0; i < div; i++ {
 		bitmap.data[i] = other.data[i]
 	}

@@ -1,23 +1,34 @@
 package dht
 
 import (
-	"crypto/rand"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
-	"time"
 	"regexp"
-	"fmt"
+	"time"
 )
 
 var ipPattern = regexp.MustCompile(`\d+\.\d+\.\d+\.\d+`)
 
+const letterBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randomString(n int) string {
+	b := make([]byte, n)
+	rand.Seed(time.Now().UnixNano())
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
 // randomString generates a size-length string randomly.
-func randomString(size int) string {
+func randomBytes(size int) []byte {
 	buff := make([]byte, size)
 	rand.Read(buff)
-	return string(buff)
+	return buff
 }
 
 // bytes2int returns the int value it represents.

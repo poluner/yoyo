@@ -1,6 +1,7 @@
 package dht
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -99,18 +100,36 @@ func TestEncodeCompactIPPortInfo(t *testing.T) {
 	}
 }
 
+func TestGetLocalIPs(t *testing.T) {
+	ips := getLocalIPs()
+	if len(ips) == 0 {
+		t.Fail()
+	}
+
+	fmt.Println(ips)
+}
+
+func TestGetRemoteIP(t *testing.T) {
+	ip, err := getRemoteIP()
+	if err != nil {
+		t.Fail()
+	}
+
+	fmt.Println(ip)
+}
+
 func TestGenAddress(t *testing.T) {
 	cases := []struct {
-		ip  string
-		port int
+		ip      string
+		port    int
 		address string
 	}{
-		{"127.0.0.1",  80, "127.0.0.1:80"},
-		{"127.0.0.1",  0, "127.0.0.1:0"},
+		{"127.0.0.1", 80, "127.0.0.1:80"},
+		{"127.0.0.1", 0, "127.0.0.1:0"},
 	}
 
 	for _, c := range cases {
-		if addr := genAddress(c.ip, c.port);  addr != c.address {
+		if addr := genAddress(c.ip, c.port); addr != c.address {
 			t.Fail()
 		}
 	}

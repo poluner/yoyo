@@ -1,9 +1,9 @@
 package dht
 
 import (
-	"fmt"
 	"bytes"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
@@ -71,7 +71,7 @@ func decodeItem(data []byte, start int) (result interface{}, index int, err erro
 	}
 
 	var (
-		decodeFunc func([]byte, int) (interface{}, int, error)
+		decodeFunc     func([]byte, int) (interface{}, int, error)
 		startCharacter = data[start]
 	)
 	switch startCharacter {
