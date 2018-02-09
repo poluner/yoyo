@@ -182,43 +182,54 @@ func EncodeInt(data int) string {
 	return fmt.Sprintf("i%de", data)
 }
 
-func encodeItem(data interface{}) (item string) {
+func encodeItem(data interface{}) (result string, err error) {
 	switch v := data.(type) {
 	case string:
-		item = EncodeString(v)
+		result = EncodeString(v)
 	case int:
-		item = EncodeInt(v)
+		result = EncodeInt(v)
 	case []interface{}:
-		item = EncodeList(v)
+		result, err = EncodeList(v)
 	case map[string]interface{}:
-		item = EncodeDict(v)
+		result, err = EncodeDict(v)
 	default:
-		panic("invalid type when encode item")
+		err = errors.New("invalid type when encode result")
 	}
 	return
 }
 
-func EncodeList(data []interface{}) string {
-	result := make([]string, len(data))
+func EncodeList(data []interface{}) (result string, err error) {
+	items := make([]string, len(data))
 
 	for i, item := range data {
-		result[i] = encodeItem(item)
+		items[i], err = encodeItem(item)
+		if err != nil {
+			return
+		}
 	}
 
-	return fmt.Sprintf("l%se", strings.Join(result, ""))
+	result = fmt.Sprintf("l%se", strings.Join(items, ""))
+	return
 }
 
-func EncodeDict(data map[string]interface{}) string {
-	result, i := make([]string, len(data)), 0
+func EncodeDict(data map[string]interface{}) (result string, err error) {
+	items, i := make([]string, len(data)), 0
 
 	for key, val := range data {
-		result[i] = fmt.Sprintf("%s%s", EncodeString(key), encodeItem(val))
+		item, e := encodeItem(val)
+		if e != nil {
+			err = e
+			return
+		}
+		items[i] = fmt.Sprintf("%s%s", EncodeString(key), item)
 		i++
 	}
 
-	return fmt.Sprintf("d%se", strings.Join(result, ""))
+	result = fmt.Sprintf("d%se", strings.Join(items, ""))
+	return
 }
 
-func Encode(data interface{}) string {
-	return encodeItem(data)
+func Encode(data interface{}) (result string, err error) {
+	result, err = encodeItem(data)
+	return
 }

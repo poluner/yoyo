@@ -1,6 +1,7 @@
 package dht
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 )
@@ -21,22 +22,18 @@ func newBitmap(size int) *bitmap {
 
 // newBitmapFrom returns a new copyed bitmap pointer which
 // newBitmap.data = other.data[:size].
+// size >= other.Size
 func newBitmapFrom(other *bitmap, size int) *bitmap {
 	bitmap := newBitmap(size)
 
-	if size > other.Size {
-		size = other.Size
-	}
-
-	div := size / 8
+	div := other.Size / 8
 	for i := 0; i < div; i++ {
 		bitmap.data[i] = other.data[i]
 	}
 
-	for i := div * 8; i < size; i++ {
-		if other.Bit(i) == 1 {
-			bitmap.Set(i)
-		}
+	mod := other.Size % 8
+	if mod > 0 {
+		bitmap.data[div] = other.data[div]
 	}
 
 	return bitmap
@@ -44,14 +41,25 @@ func newBitmapFrom(other *bitmap, size int) *bitmap {
 
 // newBitmapFromBytes returns a bitmap pointer created from a byte array.
 func newBitmapFromBytes(data []byte) *bitmap {
-	bitmap := newBitmap(len(data) * 8)
-	copy(bitmap.data, data)
-	return bitmap
+	dataLen := len(data)
+	bm := bitmap{
+		Size: dataLen * 8,
+		data: make([]byte, dataLen),
+	}
+	copy(bm.data, data)
+	return &bm
 }
 
 // newBitmapFromString returns a bitmap pointer created from a string.
-func newBitmapFromString(data string) *bitmap {
-	return newBitmapFromBytes([]byte(data))
+// data is a hexadecimal string
+func newBitmapFromString(data string) (bm *bitmap, err error) {
+	bytes, err := hex.DecodeString(data)
+	if err != nil {
+		return
+	}
+
+	bm = newBitmapFromBytes(bytes)
+	return
 }
 
 // Bit returns the bit at index.
@@ -157,5 +165,5 @@ func (bitmap *bitmap) String() string {
 
 // RawString returns the string value of bitmap.data.
 func (bitmap *bitmap) RawString() string {
-	return string(bitmap.data)
+	return hex.EncodeToString(bitmap.data)
 }

@@ -32,11 +32,9 @@ func randomBytes(size int) []byte {
 }
 
 // bytes2int returns the int value it represents.
+// len(data) <= 8
 func bytes2int(data []byte) uint64 {
 	n, val := len(data), uint64(0)
-	if n > 8 {
-		panic("data too long")
-	}
 
 	for i, b := range data {
 		val += uint64(b) << uint64((n-i-1)*8)
@@ -109,7 +107,6 @@ func getLocalIPs() (ips []string) {
 				ips = append(ips, ipnet.IP.String())
 			}
 		}
-
 	}
 	return
 }
