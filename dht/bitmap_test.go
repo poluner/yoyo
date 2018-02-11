@@ -1,7 +1,6 @@
 package dht
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -42,7 +41,6 @@ func TestBitmap(t *testing.T) {
 	}
 
 	// String
-	fmt.Println(e.String())
 	if e.String() != "0000000000" {
 		t.Fail()
 	}

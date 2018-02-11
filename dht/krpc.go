@@ -126,9 +126,13 @@ func makeError(t string, errCode int, errMsg string) map[string]interface{} {
 
 // send sends data to the udp.
 func send(dht *DHT, addr *net.UDPAddr, data map[string]interface{}) error {
-	dht.conn.SetWriteDeadline(time.Now().Add(time.Second * 15))
+	content, err := Encode(data)
+	if err != nil {
+		return err
+	}
 
-	_, err := dht.conn.WriteToUDP([]byte(Encode(data)), addr)
+	dht.conn.SetWriteDeadline(time.Now().Add(time.Second * 15))
+	_, err = dht.conn.WriteToUDP([]byte(content), addr)
 	if err != nil {
 		dht.blackList.insert(addr.IP.String(), -1)
 	}

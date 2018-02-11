@@ -2,6 +2,8 @@ package dht
 
 import (
 	"encoding/hex"
+	"fmt"
+	"strings"
 )
 
 // bitmap represents a bit array.
@@ -141,6 +143,21 @@ func (bitmap *bitmap) Xor(other *bitmap) *bitmap {
 
 // String returns the bit sequence string of the bitmap.
 func (bitmap *bitmap) String() string {
+	div, mod := bitmap.Size/8, bitmap.Size%8
+	buff := make([]string, div+mod)
+
+	for i := 0; i < div; i++ {
+		buff[i] = fmt.Sprintf("%08b", bitmap.data[i])
+	}
+
+	for i := div; i < div+mod; i++ {
+		buff[i] = fmt.Sprintf("%1b", bitmap.Bit(div*8+(i-div)))
+	}
+
+	return strings.Join(buff, "")
+}
+
+func (bitmap *bitmap) HexString() string {
 	return hex.EncodeToString(bitmap.data)
 }
 
