@@ -101,32 +101,29 @@ func (p *Peer) CompactIPPortInfo() string {
 
 // peersManager represents a proxy that manipulates peers.
 type peersManager struct {
-	sync.RWMutex
 	table *syncedMap
-	dht   *DHT
+	k     int
 }
 
 // newPeersManager returns a new peersManager.
-func newPeersManager(dht *DHT) *peersManager {
+func newPeersManager(maxPeerCount int) *peersManager {
 	return &peersManager{
 		table: newSyncedMap(),
-		dht:   dht,
+		k:     maxPeerCount,
 	}
 }
 
 // Insert adds a peer into peersManager.
 func (pm *peersManager) Insert(infoHash string, peer *Peer) {
-	pm.Lock()
 	if _, ok := pm.table.Get(infoHash); !ok {
 		pm.table.Set(infoHash, newKeyedDeque())
 	}
-	pm.Unlock()
 
 	v, _ := pm.table.Get(infoHash)
 	queue := v.(*keyedDeque)
 
 	queue.Push(peer.CompactIPPortInfo(), peer)
-	if queue.Len() > pm.dht.K {
+	if queue.Len() > pm.k {
 		queue.Remove(queue.Front())
 	}
 }
@@ -179,7 +176,7 @@ func (bucket *kbucket) LastChanged() time.Time {
 
 // RandomChildID returns a random id that has the same prefix with bucket.
 func (bucket *kbucket) RandomChildID() string {
-	randomBitmap := newBitmapFromString(randomString(20))
+	randomBitmap := newBitmapFromBytes(randomBytes(nodeIdLength))
 	for i := 0; i < bucket.prefix.Size; i++ {
 		randomBitmap.set(i, bucket.prefix.Bit(i))
 	}
@@ -207,6 +204,7 @@ func (bucket *kbucket) Insert(no *node) bool {
 
 // Replace removes node, then put bucket.candidates.Back() to the right
 // place of bucket.nodes.
+// nodes中lastActiveTime越早的在越前面
 func (bucket *kbucket) Replace(no *node) {
 	bucket.nodes.Delete(no.id.RawString())
 	bucket.UpdateTimestamp()
@@ -219,11 +217,10 @@ func (bucket *kbucket) Replace(no *node) {
 
 	inserted := false
 	for e := range bucket.nodes.Iter() {
-		if e.Value.(*node).lastActiveTime.After(
-			no.lastActiveTime) && !inserted {
-
+		if e.Value.(*node).lastActiveTime.After(no.lastActiveTime) && !inserted {
 			bucket.nodes.InsertBefore(no, e)
 			inserted = true
+			break
 		}
 	}
 

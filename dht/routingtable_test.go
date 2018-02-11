@@ -2,7 +2,9 @@ package dht
 
 import (
 	"net"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestNode(t *testing.T) {
@@ -36,9 +38,7 @@ func TestNode(t *testing.T) {
 }
 
 func TestPeersManager(t *testing.T) {
-	dht := New(nil)
-	dht.K = 2
-	pm := newPeersManager(dht)
+	pm := newPeersManager(2)
 
 	p1 := newPeer(net.IP{91, 98, 99, 100}, 100, "aa")
 	p2 := newPeer(net.IP{91, 98, 99, 100}, 101, "bb")
@@ -56,4 +56,38 @@ func TestPeersManager(t *testing.T) {
 	if ps[0].Port != 101 || ps[0].token != "bb" {
 		t.Fail()
 	}
+}
+
+func TestBucket(t *testing.T) {
+	prefix := newBitmapFromString("aaaaa")
+	bucket := newKBucket(prefix)
+
+	childrenId := bucket.RandomChildID()
+	if !strings.HasPrefix(childrenId, "aaaaa") {
+		t.Fail()
+	}
+
+	node1, _ := newNode("aaaaaaaaaaaaaaaaaaaa", "udp", "127.0.0.1:88")
+	node2, _ := newNode("bbbbbbbbbbbbbbbbbbbb", "udp", "127.0.0.1:88")
+	node3, _ := newNode("cccccccccccccccccccc", "udp", "127.0.0.1:88")
+	if !bucket.Insert(node1) {
+		t.Fail()
+	}
+	if !bucket.Insert(node2) {
+		t.Fail()
+	}
+	if bucket.Insert(node1) {
+		t.Fail()
+	}
+
+	node3.lastActiveTime = time.Now().Add(-1 * time.Hour)
+	bucket.candidates.Push(node3.id.RawString(), node3)
+	bucket.Replace(node1)
+	if bucket.nodes.Front().Value.(*node).id.RawString() != node3.id.RawString() {
+		t.Fail()
+	}
+}
+
+func TestRoutingTableNode(t *testing.T) {
+
 }
