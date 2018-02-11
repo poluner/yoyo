@@ -1,16 +1,21 @@
-package yoyo
+package dht
 
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
-	"fmt"
 )
 
 // maxPrefixLength is the length of DHT node.
-const maxPrefixLength = 160
+const (
+	maxPrefixLength       = 160
+	nodeIdLength          = maxPrefixLength / 8
+	compactIpLength       = 6
+	compactNodeInfoLength = nodeIdLength + compactIpLength
+)
 
 // node represents a DHT node.
 type node struct {
@@ -21,7 +26,7 @@ type node struct {
 
 // newNode returns a node pointer.
 func newNode(id, network, address string) (*node, error) {
-	if len(id) != 20 {
+	if len(id) != nodeIdLength {
 		return nil, errors.New("node id should be a 20-length string")
 	}
 
@@ -34,15 +39,16 @@ func newNode(id, network, address string) (*node, error) {
 }
 
 // newNodeFromCompactInfo parses compactNodeInfo and returns a node pointer.
-func newNodeFromCompactInfo(
-	compactNodeInfo string, network string) (*node, error) {
-
-	if len(compactNodeInfo) != 26 {
+func newNodeFromCompactInfo(compactNodeInfo string, network string) (*node, error) {
+	if len(compactNodeInfo) != compactNodeInfoLength {
 		return nil, errors.New("compactNodeInfo should be a 26-length string")
 	}
 
-	id := compactNodeInfo[:20]
-	ip, port, _ := decodeCompactIPPortInfo(compactNodeInfo[20:])
+	id := compactNodeInfo[:nodeIdLength]
+	ip, port, err := decodeCompactIPPortInfo(compactNodeInfo[nodeIdLength:])
+	if err != nil {
+		return nil, err
+	}
 
 	return newNode(id, network, genAddress(ip.String(), port))
 }
@@ -174,7 +180,7 @@ func (bucket *kbucket) LastChanged() time.Time {
 // RandomChildID returns a random id that has the same prefix with bucket.
 func (bucket *kbucket) RandomChildID() string {
 	randomBitmap := newBitmapFromString(randomString(20))
-	for i := 0; i < bucket.prefix.Size ; i++ {
+	for i := 0; i < bucket.prefix.Size; i++ {
 		randomBitmap.set(i, bucket.prefix.Bit(i))
 	}
 	return randomBitmap.RawString()

@@ -1,6 +1,7 @@
 package dht
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -8,10 +9,7 @@ func TestBitmap(t *testing.T) {
 	a := newBitmap(10)
 	b := newBitmapFrom(a, 10)
 	c := newBitmapFromBytes([]byte{48, 49, 50, 51, 52, 53, 54, 55, 56, 57})
-	d, err := newBitmapFromString("30313233343536373839")
-	if err != nil {
-		t.Fail()
-	}
+	d := newBitmapFromString("0123456789")
 	e := newBitmap(10)
 
 	// Bit
@@ -27,7 +25,7 @@ func TestBitmap(t *testing.T) {
 	}
 
 	// RawString
-	if c.RawString() != d.RawString() || c.RawString() != "30313233343536373839" {
+	if c.RawString() != d.RawString() || c.RawString() != "0123456789" {
 		t.Fail()
 	}
 
@@ -44,6 +42,7 @@ func TestBitmap(t *testing.T) {
 	}
 
 	// String
+	fmt.Println(e.String())
 	if e.String() != "0000000000" {
 		t.Fail()
 	}

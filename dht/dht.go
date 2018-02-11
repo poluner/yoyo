@@ -1,6 +1,6 @@
 // Package dht implements the bittorrent dht protocol. For more information
 // see http://www.bittorrent.org/beps/bep_0005.html.
-package yoyo
+package dht
 
 import (
 	"encoding/hex"

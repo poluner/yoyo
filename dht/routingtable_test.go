@@ -1,8 +1,8 @@
-package yoyo
+package dht
 
 import (
-	"testing"
 	"net"
+	"testing"
 )
 
 func TestNode(t *testing.T) {
@@ -40,16 +40,16 @@ func TestPeersManager(t *testing.T) {
 	dht.K = 2
 	pm := newPeersManager(dht)
 
-	p1 := newPeer(net.IP{91,98,99,100}, 100, "aa")
-	p2 := newPeer(net.IP{91,98,99,100}, 101, "bb")
-	p3 := newPeer(net.IP{91,98,99,100}, 102, "cc")
+	p1 := newPeer(net.IP{91, 98, 99, 100}, 100, "aa")
+	p2 := newPeer(net.IP{91, 98, 99, 100}, 101, "bb")
+	p3 := newPeer(net.IP{91, 98, 99, 100}, 102, "cc")
 
 	pm.Insert("a", p1)
 	pm.Insert("a", p2)
 	pm.Insert("a", p3)
 
 	ps := pm.GetPeers("a", 5)
-	if len(ps) != 2{
+	if len(ps) != 2 {
 		t.Fail()
 	}
 

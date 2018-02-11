@@ -2,10 +2,9 @@ package dht
 
 import (
 	"encoding/hex"
-	"fmt"
-	"strings"
 )
 
+// bitmap represents a bit array.
 type bitmap struct {
 	Size int
 	data []byte
@@ -51,15 +50,8 @@ func newBitmapFromBytes(data []byte) *bitmap {
 }
 
 // newBitmapFromString returns a bitmap pointer created from a string.
-// data is a hexadecimal string
-func newBitmapFromString(data string) (bm *bitmap, err error) {
-	bytes, err := hex.DecodeString(data)
-	if err != nil {
-		return
-	}
-
-	bm = newBitmapFromBytes(bytes)
-	return
+func newBitmapFromString(data string) *bitmap {
+	return newBitmapFromBytes([]byte(data))
 }
 
 // Bit returns the bit at index.
@@ -149,21 +141,10 @@ func (bitmap *bitmap) Xor(other *bitmap) *bitmap {
 
 // String returns the bit sequence string of the bitmap.
 func (bitmap *bitmap) String() string {
-	div, mod := bitmap.Size/8, bitmap.Size%8
-	buff := make([]string, div+mod)
-
-	for i := 0; i < div; i++ {
-		buff[i] = fmt.Sprintf("%08b", bitmap.data[i])
-	}
-
-	for i := div; i < div+mod; i++ {
-		buff[i] = fmt.Sprintf("%1b", bitmap.Bit(div*8+(i-div)))
-	}
-
-	return strings.Join(buff, "")
+	return hex.EncodeToString(bitmap.data)
 }
 
 // RawString returns the string value of bitmap.data.
 func (bitmap *bitmap) RawString() string {
-	return hex.EncodeToString(bitmap.data)
+	return string(bitmap.data)
 }
