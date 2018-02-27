@@ -1,7 +1,6 @@
 package dht
 
 import (
-	"net"
 	"strings"
 	"testing"
 	"time"
@@ -37,27 +36,6 @@ func TestNode(t *testing.T) {
 	}
 }
 
-func TestPeersManager(t *testing.T) {
-	pm := newPeersManager(2)
-
-	p1 := newPeer(net.IP{91, 98, 99, 100}, 100, "aa")
-	p2 := newPeer(net.IP{91, 98, 99, 100}, 101, "bb")
-	p3 := newPeer(net.IP{91, 98, 99, 100}, 102, "cc")
-
-	pm.Insert("a", p1)
-	pm.Insert("a", p2)
-	pm.Insert("a", p3)
-
-	ps := pm.GetPeers("a", 5)
-	if len(ps) != 2 {
-		t.Fail()
-	}
-
-	if ps[0].Port != 101 || ps[0].token != "bb" {
-		t.Fail()
-	}
-}
-
 func TestBucket(t *testing.T) {
 	prefix := newBitmapFromString("aaaaa")
 	bucket := newKBucket(prefix)
@@ -86,8 +64,4 @@ func TestBucket(t *testing.T) {
 	if bucket.nodes.Front().Value.(*node).id.RawString() != node3.id.RawString() {
 		t.Fail()
 	}
-}
-
-func TestRoutingTableNode(t *testing.T) {
-
 }

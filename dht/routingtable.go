@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// maxPrefixLength is the length of DHT node.
 const (
 	maxPrefixLength       = 160
 	nodeIdLength          = maxPrefixLength / 8
@@ -101,29 +100,32 @@ func (p *Peer) CompactIPPortInfo() string {
 
 // peersManager represents a proxy that manipulates peers.
 type peersManager struct {
+	sync.RWMutex
 	table *syncedMap
-	k     int
+	dht   *DHT
 }
 
 // newPeersManager returns a new peersManager.
-func newPeersManager(maxPeerCount int) *peersManager {
+func newPeersManager(dht *DHT) *peersManager {
 	return &peersManager{
 		table: newSyncedMap(),
-		k:     maxPeerCount,
+		dht:   dht,
 	}
 }
 
 // Insert adds a peer into peersManager.
 func (pm *peersManager) Insert(infoHash string, peer *Peer) {
+	pm.Lock()
 	if _, ok := pm.table.Get(infoHash); !ok {
 		pm.table.Set(infoHash, newKeyedDeque())
 	}
+	pm.Unlock()
 
 	v, _ := pm.table.Get(infoHash)
 	queue := v.(*keyedDeque)
 
 	queue.Push(peer.CompactIPPortInfo(), peer)
-	if queue.Len() > pm.k {
+	if queue.Len() > pm.dht.K {
 		queue.Remove(queue.Front())
 	}
 }
@@ -220,7 +222,6 @@ func (bucket *kbucket) Replace(no *node) {
 		if e.Value.(*node).lastActiveTime.After(no.lastActiveTime) && !inserted {
 			bucket.nodes.InsertBefore(no, e)
 			inserted = true
-			break
 		}
 	}
 
