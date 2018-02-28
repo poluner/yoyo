@@ -3,6 +3,9 @@ package server
 const (
 	ProjectName = "yoyo"
 
+	esIndex = "torrent"
+	esType  = "doc"
+
 	noError       = 0
 	internalErr   = 100
 	paramsInvalid = 200

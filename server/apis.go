@@ -35,9 +35,19 @@ func Suggest(c *gin.Context) {
 		param.Size = 10
 	}
 
+	result, err := EsSuggest(param.Text, param.Size)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"result": "ok",
 		"code":   noError,
+		"data":   result,
 	})
 }
 
@@ -56,8 +66,23 @@ func Search(c *gin.Context) {
 		return
 	}
 
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+
+	total, result, err := EsSearch(param.Text, param.Offset, param.Limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"result": "ok",
 		"code":   noError,
+		"total":  total,
+		"data":   result,
 	})
 }
