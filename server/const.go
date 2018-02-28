@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	EsUrls = []string{"http://tw07a111:9200", " http://tw07a112:9200"}
+	EsUrls = []string{"http://120.132.120.59:9200"}
 )
