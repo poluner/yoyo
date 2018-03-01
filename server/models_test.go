@@ -15,7 +15,7 @@ func TestEsSuggest(t *testing.T) {
 }
 
 func TestEsSearch(t *testing.T) {
-	total, result, err := EsSearch("bat", 0, 1)
+	total, result, err := EsSearch("batman", 0, 1)
 	if err != nil {
 		t.Fail()
 	}
