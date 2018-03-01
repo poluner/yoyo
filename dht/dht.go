@@ -175,7 +175,7 @@ func (dht *DHT) init() {
 
 	dht.conn = listener.(*net.UDPConn)
 	dht.routingTable = newRoutingTable(dht.KBucketSize, dht)
-	dht.peersManager = newPeersManager(dht.K)
+	dht.peersManager = newPeersManager(dht)
 	dht.tokenManager = newTokenManager(dht.TokenExpiredAfter, dht)
 	dht.transactionManager = newTransactionManager(
 		dht.MaxTransactionCursor, dht)
