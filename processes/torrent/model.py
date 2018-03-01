@@ -47,7 +47,7 @@ es_client = Elasticsearch(es_hosts)
 
 class Infohash(BaseModel):
 
-    __tablename__ = 'infohash_tasks'
+    __tablename__ = 'infohash_task'
 
     id = Column(Integer, primary_key=True)
     infohash = Column(String(40), nullable=False)
