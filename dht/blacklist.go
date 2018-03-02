@@ -38,6 +38,18 @@ func (bl *blackList) genKey(ip string, port int) string {
 	return key
 }
 
+func (bl *blackList) random() (ip string, port int) {
+	val := bl.list.RandomValue()
+	if val == nil {
+		return
+	}
+
+	item := val.(blockedItem)
+	ip = item.ip
+	port = item.port
+	return
+}
+
 // insert adds a blocked item to the blacklist.
 func (bl *blackList) insert(ip string, port int) {
 	if bl.list.Len() >= bl.maxSize {

@@ -33,6 +33,18 @@ func (smap *syncedMap) Get(key interface{}) (val interface{}, ok bool) {
 	return
 }
 
+// Get returns the value mapped to key.
+func (smap *syncedMap) RandomValue() (val interface{}) {
+	smap.RLock()
+	defer smap.RUnlock()
+
+	for _, v := range smap.data {
+		val = v
+		break
+	}
+	return
+}
+
 // Has returns whether the syncedMap contains the key.
 func (smap *syncedMap) Has(key interface{}) bool {
 	_, ok := smap.Get(key)
