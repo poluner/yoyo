@@ -25,10 +25,11 @@ type File struct {
 }
 
 type BitTorrent struct {
-	Name   string `json:"name"`
-	Name2  string `json:"name2"`
-	Files  []File `json:"files,omitempty"`
-	Length int    `json:"length,omitempty"`
+	Name        string    `json:"name"`
+	Name2       string    `json:"name2"`
+	Files       []File    `json:"files,omitempty"`
+	Length      int       `json:"length,omitempty"`
+	CollectedAt time.Time `json:"collected_at"`
 }
 
 type Infohash struct {
@@ -151,6 +152,7 @@ func insertIndex(infoHash string, bt *BitTorrent) {
 	if total != 0 {
 		bt.Length = total
 	}
+	bt.CollectedAt = time.Now()
 
 	_, err := esClient.Index().Index("torrent").Type(
 		"doc").Id(infoHash).BodyJson(bt).Do(context.Background())
