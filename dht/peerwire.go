@@ -183,6 +183,9 @@ func NewWire(blackListSize, requestQueueSize, workerQueueSize int) *Wire {
 
 // Request pushes the request to the queue.
 func (wire *Wire) Request(infoHash []byte, ip string, port int) {
+	if ip == "" || port == 0 {
+		return
+	}
 	wire.requests <- Request{InfoHash: infoHash, IP: ip, Port: port}
 }
 

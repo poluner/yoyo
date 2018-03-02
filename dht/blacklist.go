@@ -44,7 +44,7 @@ func (bl *blackList) random() (ip string, port int) {
 		return
 	}
 
-	item := val.(blockedItem)
+	item := val.(*blockedItem)
 	ip = item.ip
 	port = item.port
 	return

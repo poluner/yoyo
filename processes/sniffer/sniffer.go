@@ -107,7 +107,7 @@ func insertDatabase(infoStr string, isAnnounce bool) (finished bool) {
 	var record Infohash
 	infoHash := hex.EncodeToString([]byte(infoStr))
 	tx := dbConnection.Begin()
-	if tx.Where("info_hash = ?", infoHash).Find(&record).RecordNotFound() {
+	if tx.Where("infohash = ?", infoHash).Find(&record).RecordNotFound() {
 		record.Infohash = infoHash
 		if isAnnounce {
 			record.AnnouncePeer += 1
