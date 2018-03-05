@@ -97,7 +97,8 @@ func init() {
 			insertIndex(infoHash, &bt)
 			data, err := json.Marshal(bt)
 			if err == nil {
-				fmt.Printf("%s\n\n", data)
+				fmt.Printf("%s\n", infoHash)
+				fmt.Printf("%s\n", data)
 			}
 		}
 	}()
