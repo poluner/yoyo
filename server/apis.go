@@ -86,3 +86,19 @@ func Search(c *gin.Context) {
 		"data":   result,
 	})
 }
+
+func UpdateDownloadCount(c *gin.Context) {
+	infohash := c.Param("infohash")
+	err := EsUpdateHot(infohash)
+	if err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "ok",
+			"code":   noError,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "infohash not exist",
+			"code":   paramsInvalid,
+		})
+	}
+}

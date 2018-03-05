@@ -23,3 +23,10 @@ func TestEsSearch(t *testing.T) {
 	fmt.Println(total)
 	fmt.Printf("%+v\n", result)
 }
+
+func TestEsUpdateHot(t *testing.T) {
+	err := EsUpdateHot("5d869073b0c6eaaabbdb07e35abbbb35c1ed6ed5")
+	if err != nil {
+		t.Fail()
+	}
+}
