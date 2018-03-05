@@ -111,21 +111,22 @@ func EsSuggest(text string, size int) (result []string, err error) {
 func EsSearch(text string, offset int, limit int) (total int64, result []Torrent, err error) {
 	result = make([]Torrent, 0, limit)
 	input := strings.TrimSpace(text)
+	search := esClient.Search().Index(esIndex).Type(esType)
 	if input == "" {
-		return
+		query := elastic.NewMatchAllQuery()
+		search = search.Query(query)
+	} else {
+		query := elastic.NewBoolQuery()
+		nameQuery := elastic.NewMatchQuery("name", input)
+		pathQuery := elastic.NewMatchQuery("files.path", input)
+		query = query.Should(nameQuery, pathQuery)
+		highlight := elastic.NewHighlight().Field("name").Field("files.path")
+		search = search.Query(query).Highlight(highlight)
+		search = search.Sort("_score", false)
+
 	}
 
-	query := elastic.NewBoolQuery()
-	nameQuery := elastic.NewMatchQuery("name", input)
-	pathQuery := elastic.NewMatchQuery("files.path", input)
-	query = query.Should(nameQuery, pathQuery)
-	highlight := elastic.NewHighlight().Field("name").Field("files.path")
-
-	search := esClient.Search().Index(esIndex).Type(esType)
-	search = search.Query(query).Highlight(highlight)
-	search = search.Sort("_score", false)
 	search = search.From(offset).Size(limit)
-
 	res, err := search.Do(context.Background())
 	if err != nil {
 		return
