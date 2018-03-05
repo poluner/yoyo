@@ -1,0 +1,16 @@
+#!/bin/bash
+
+INFOID="8CF9317C7ECCBB657F5C35900DDA8FAF779F8BFA"
+PEERID="aaaaaaaaaaaaaaaa"
+APPID=1000
+DOWNLOAD_CHANNEL="miui"
+VERSION=62
+SEQ=10001
+CMD_ID=3059 #query req cmd id
+
+./test ${INFOID} ${PEERID} ${APPID} ${DOWNLOAD_CHANNEL} ${VERSION} ${SEQ} ${CMD_ID}
+
+if [ $? -ne 0 ];then
+	exit -1
+fi
+exit 0
