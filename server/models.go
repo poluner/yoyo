@@ -28,6 +28,7 @@ type FileItem struct {
 
 type EsTorrent struct {
 	Name        string     `json:"name"`
+	Download    int        `json:"hot"`
 	Length      int64      `json:"length"`
 	CollectedAt time.Time  `json:"collected_at"`
 	Files       []FileItem `json:"files,omitempty"`
@@ -37,6 +38,7 @@ type Torrent struct {
 	Infohash    string              `json:"infohash"`
 	Name        string              `json:"name"`
 	Length      int64               `json:"length"`
+	Download    int                 `json:"download"`
 	CollectedAt JsonTime            `json:"collected_at"`
 	Files       []FileItem          `json:"files,omitempty"`
 	Highlight   map[string][]string `json:"highlight,omitempty"`
@@ -144,6 +146,7 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 			Infohash:    hit.Id,
 			Name:        item.Name,
 			Length:      item.Length,
+			Download:    item.Download,
 			Files:       item.Files,
 			CollectedAt: JsonTime{item.CollectedAt},
 			Highlight:   hit.Highlight,
