@@ -347,7 +347,6 @@ func (wire *Wire) fetchMetadata(r Request) {
 					return
 				}
 
-				wire.activePeers.insert(r.IP, r.Port)
 				wire.responses <- Response{
 					Request:      r,
 					MetadataInfo: metadataInfo,
@@ -363,7 +362,6 @@ func (wire *Wire) fetchMetadata(r Request) {
 // Run starts the peer wire protocol.
 func (wire *Wire) Run() {
 	go wire.blackList.clear()
-	go wire.activePeers.clear()
 
 	for r := range wire.requests {
 		wire.workerTokens <- struct{}{}
