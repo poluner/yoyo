@@ -98,7 +98,8 @@ func NewCrawlConfig() *Config {
 	config.CheckKBucketPeriod = time.Second * 5
 	config.KBucketSize = math.MaxInt32
 	config.Mode = CrawlMode
-	config.RefreshNodeNum = 256
+	config.RefreshNodeNum = 8192
+	config.MaxNodes = 50000
 
 	return config
 }
