@@ -11,7 +11,7 @@ type suggestParam struct {
 }
 
 type searchParam struct {
-	Text   string `form:"text" binding:"required"`
+	Text   string `form:"text"`
 	Offset int    `form:"offset"`
 	Limit  int    `form:"limit"`
 }
