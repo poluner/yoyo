@@ -157,7 +157,18 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 
 func EsUpdateHot(infohash string) (err error) {
 	ctx := context.Background()
-	script := elastic.NewScript("ctx._source.hot+=1")
+	get, err := esClient.Get().Index(esIndex).Type(esType).Id(infohash).Do(ctx)
+	if err != nil {
+		return
+	}
+
+	item := EsTorrent{}
+	err = json.Unmarshal(*get.Source, &item)
+	if err != nil {
+		return
+	}
+
+	script := elastic.NewScript("ctx._source.hot=params.hot").Param("hot", item.Download+1)
 	_, err = esClient.Update().Index(esIndex).Type(esType).Id(infohash).Script(script).Do(ctx)
 	return
 }
