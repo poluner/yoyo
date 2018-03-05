@@ -46,7 +46,7 @@ func completionSuggest(text string, size int) (result []string, err error) {
 	result = make([]string, 0, size)
 	search := esClient.Search().Index(esIndex).Type(esType)
 	suggester := elastic.NewCompletionSuggester("completion-suggest").
-		Text(text).Field("name2").SkipDuplicate(true).Size(size)
+		Text(text).Field("name2").SkipDuplicates(true).Size(size)
 	search = search.Suggester(suggester)
 	searchResult, err := search.Do(context.Background())
 	if err != nil {
