@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -12,18 +11,18 @@ type JsonTime struct {
 }
 
 func (t *JsonTime) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), "\"")
+	s := string(b)
 	if s == "null" {
 		t.Time = time.Time{}
 		return nil
 	}
 
-	tm, err := time.Parse("2006-01-02T15:04:05.999999", s)
+	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return err
 	}
 
-	t.Time = tm
+	t.Time = time.Unix(i, 0)
 	return nil
 }
 

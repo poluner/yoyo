@@ -5,6 +5,7 @@ import (
 	"github.com/olivere/elastic"
 	"golang.org/x/net/context"
 	"strings"
+	"time"
 )
 
 var (
@@ -28,7 +29,7 @@ type FileItem struct {
 type EsTorrent struct {
 	Name        string     `json:"name"`
 	Length      int64      `json:"length"`
-	CollectedAt JsonTime   `json:"collected_at"`
+	CollectedAt time.Time  `json:"collected_at"`
 	Files       []FileItem `json:"files,omitempty"`
 }
 
@@ -143,7 +144,7 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 			Name:        item.Name,
 			Length:      item.Length,
 			Files:       item.Files,
-			CollectedAt: item.CollectedAt,
+			CollectedAt: JsonTime{item.CollectedAt},
 			Highlight:   hit.Highlight,
 		})
 	}
