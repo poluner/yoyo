@@ -176,10 +176,7 @@ func main() {
 		}
 	}
 	config.OnGetPeers = func(infoHash, ip string, port int) {
-		if !insertDatabase(infoHash, false) {
-			ip, port = wire.RandomActivePeer()
-			wire.Request([]byte(infoHash), ip, port)
-		}
+		insertDatabase(infoHash, false)
 	}
 	d := dht.New(config)
 

@@ -161,7 +161,6 @@ type Response struct {
 // Wire represents the wire protocol.
 type Wire struct {
 	blackList    *blackList
-	activePeers  *blackList
 	requests     chan Request
 	responses    chan Response
 	workerTokens chan struct{}
@@ -174,7 +173,6 @@ type Wire struct {
 func NewWire(blackListSize, requestQueueSize, workerQueueSize int) *Wire {
 	return &Wire{
 		blackList:    newBlackList(blackListSize),
-		activePeers:  newBlackList(blackListSize),
 		requests:     make(chan Request, requestQueueSize),
 		responses:    make(chan Response, 1024),
 		workerTokens: make(chan struct{}, workerQueueSize),
@@ -382,8 +380,4 @@ func (wire *Wire) Run() {
 			wire.fetchMetadata(r)
 		}(r)
 	}
-}
-
-func (wire *Wire) RandomActivePeer() (string, int) {
-	return wire.activePeers.random()
 }
