@@ -53,7 +53,6 @@ class Infohash(BaseModel):
 
     id = Column(Integer, primary_key=True)
     infohash = Column(String(40), nullable=False)
-    hot = Column(Integer, nullable=False)
     status = Column(SmallInteger, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.now)
     updated_at = Column(DateTime, nullable=False, default=datetime.datetime.now,
@@ -106,6 +105,9 @@ if __name__ == '__main__':
     get_torrent_path = os.path.join(current_dir, 'gettorrent')
     while True:
         records = Infohash.ready_records(100)
+        if not records:
+            break
+
         for record in records:
             out = subprocess.check_output("{} {}".format(get_torrent_path, record.infohash))
             if out == b'yes':
