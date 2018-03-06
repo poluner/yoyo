@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	log "github.com/alecthomas/log4go"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -48,6 +49,8 @@ func (Infohash) TableName() string {
 }
 
 func init() {
+	log.LoadConfiguration("logging.xml")
+
 	var err error
 	dbConnection, err = gorm.Open("mysql", "watchnow:watchnow2018@tcp(172.31.21.32:3306)/yoyo?charset=utf8mb4&parseTime=True&loc=Local")
 	if err != nil {
@@ -116,39 +119,45 @@ func retrieveMetaData(infohash string) (bt *BitTorrent, err error) {
 	return
 }
 
+func processRecord(record *Infohash) {
+	success, err := downloadTorrent(record.Infohash)
+	if err != nil {
+		return
+	}
+	log.Info(record.Infohash, success)
+
+	if !success {
+		dbConnection.Table("infohash_task").Where(
+			"infohash = ?", record.Infohash).UpdateColumn("status", 2)
+		return
+	}
+
+	bt, err := retrieveMetaData(record.Infohash)
+	if err != nil {
+		return
+	}
+
+	_, err = esClient.Index().Index("torrent").Type(
+		"doc").Id(record.Infohash).BodyJson(bt).Do(context.Background())
+	if err != nil {
+		return
+	}
+	dbConnection.Table("infohash_task").Where(
+		"infohash = ?", record.Infohash).UpdateColumn("status", 1)
+}
+
 func main() {
-	var records []Infohash
 	for {
+		var records []Infohash
 		findResult := dbConnection.Where("status = ?", 0).Limit(100).Find(&records)
 		if findResult.RecordNotFound() {
 			break
 		}
 
 		for _, record := range records {
-			success, err := downloadTorrent(record.Infohash)
-			if err != nil {
-				continue
-			}
-			fmt.Println(record.Infohash, success)
-
-			if !success {
-				dbConnection.Table("infohash_task").Where(
-					"infohash = ?", record.Infohash).UpdateColumn("status", 2)
-				continue
-			}
-
-			bt, err := retrieveMetaData(record.Infohash)
-			if err != nil {
-				continue
-			}
-
-			_, err = esClient.Index().Index("torrent").Type(
-				"doc").Id(record.Infohash).BodyJson(bt).Do(context.Background())
-			if err != nil {
-				continue
-			}
-			dbConnection.Table("infohash_task").Where(
-				"infohash = ?", record.Infohash).UpdateColumn("status", 1)
+			go processRecord(&record)
 		}
+
+		time.Sleep(time.Second * 10)
 	}
 }
