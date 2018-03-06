@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """异步任务"""
+import time
 import datetime
 import subprocess
 import torrent_parser as tp
 
 from . import (
     celery_app,
-    logger,
     get_torrent_path,
     Infohash,
     es_client,
@@ -58,3 +58,18 @@ def download_torrent(infohash):
         update_meta_info.delay(infohash)
     else:
         Infohash.update_status(infohash, 2)
+
+
+@celery_app.task
+def begin_task():
+    offset, limit = 0, 100
+    while True:
+        records = Infohash.ready_records(offset, limit)
+        if not records:
+            break
+
+        for record in records:
+            download_torrent.delay(record.infohash)
+
+        offset += limit
+        time.sleep(2)

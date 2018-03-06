@@ -80,10 +80,9 @@ class Infohash(BaseModel):
         session.commit()
 
     @classmethod
-    def ready_records(cls, size):
+    def ready_records(cls, offset, size):
         session = DBSession()
         records = session.query(cls).filter(cls.status == 0). \
-            order_by(cls.updated_at.desc()).limit(size).all()
+            order_by(cls.updated_at.desc()).offset(offset).limit(size).all()
         session.commit()
         return records
-
