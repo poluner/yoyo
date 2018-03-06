@@ -137,17 +137,20 @@ func main() {
 			if !success {
 				dbConnection.Table("infohash_task").Where(
 					"infohash = ?", record.Infohash).UpdateColumn("status", 2)
+				log.Error(err)
 				continue
 			}
 
 			bt, err := retrieveMetaData(record.Infohash)
 			if err != nil {
+				log.Error(err)
 				continue
 			}
 
 			_, err = esClient.Index().Index("torrent").Type(
 				"doc").Id(record.Infohash).BodyJson(bt).Do(context.Background())
 			if err != nil {
+				log.Error(err)
 				continue
 			}
 			dbConnection.Table("infohash_task").Where(
