@@ -19,7 +19,7 @@ CC = g++
 
 # bin file
 #DATE := $(shell date +"%Y%m%d")
-TARGET = test
+TARGET = gettorrent
 
 all::	$(TARGET)
 

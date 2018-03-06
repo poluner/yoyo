@@ -15,14 +15,18 @@ using namespace BTQUERY;
 
 int main(int argc, char* argv[])
 {
+    if argc != 2 {
+        return -1
+    }
     //base
     QueryParams params;
     std::string str_require;
     QueryResponse response;
     std::string str_response;
+    std::string infohash(argv[1])
 
-    //ÉèÖÃ²ÎÊý
-    params.infohash = "8CF9317C7ECCBB657F5C35900DDA8FAF779F8BFA";
+    //ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½
+    params.infohash = infohash;
     params.peerid = "aaaaaaaaaaaaaaaa";
     params.appid = 1000;
     params.down_channel = "miui";
@@ -30,7 +34,7 @@ int main(int argc, char* argv[])
     params.seq = 10001;
     params.cmd_id = 3095;
 
-    //¼ÓÃÜ
+    //ï¿½ï¿½ï¿½ï¿½
     BTqueryClient query_client;
     int ret_encode = query_client.encode_query_params(params, str_require);
     if(ret_encode)
@@ -39,7 +43,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    //·¢ËÍÇëÇó
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     std::string url = "127.0.0.1:801";
     http_tool::CHttpClient http_client_tool;
     int ret_post = http_client_tool.Post(url, str_require, str_response);
@@ -49,7 +53,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    //½âÎö·µ»Ø½á¹û
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø½ï¿½ï¿½
     int ret_decode = query_client.decode_query_result(str_response, response);
     if(ret_decode)
     {
@@ -62,16 +66,17 @@ int main(int argc, char* argv[])
     response.version, response.seq, response.len, response.client_ver, response.compress_flag, response.padding_len,
     response.cmd_id, response.result, response.compress, response.bt_file.size());
 
-    //´¦Àíresponse
+    //ï¿½ï¿½ï¿½ï¿½response
     if(2 == response.result)
     {
-        printf("not found\n");
+        printf("no");
     }
     else if(0 == response.result)
     {
-        printf("found\n");
-        //±£´æ
-        FILE *pFile_save = fopen("get.torrent", "w");
+        printf("yes");
+        //ï¿½ï¿½ï¿½ï¿½
+        std::string file_path = "/tmp/torrent/" + infohash + ".torrent"
+        FILE *pFile_save = fopen(file_path.c_str(), "w");
         if(!pFile_save)
         {
             return -1;
