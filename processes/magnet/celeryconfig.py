@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 """celery配置"""
 
-BROKER_URL = 'amqp://guest:guest@10.33.1.37:5672/comments'
+BROKER_URL = 'redis://:0m9d7R1DYydixHnJ@172.31.10.234:6385/1'
 
 CELERY_IMPORTS = (
     'magnet.tasks',

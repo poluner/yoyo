@@ -4,7 +4,7 @@ import datetime
 import subprocess
 import torrent_parser as tp
 
-from magnet import (
+from . import (
     celery_app,
     logger,
     get_torrent_path,
