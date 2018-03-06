@@ -124,7 +124,7 @@ func processRecord(record *Infohash) {
 	if err != nil {
 		return
 	}
-	log.Info(record.Infohash, success)
+	log.Info("%s\t%t", record.Infohash, success)
 
 	if !success {
 		dbConnection.Table("infohash_task").Where(
