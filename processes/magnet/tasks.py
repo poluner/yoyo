@@ -55,7 +55,6 @@ def update_meta_info(infohash):
 def download_torrent(infohash):
     out = subprocess.check_output(
         "{} {}".format(get_torrent_path, infohash), shell=True)
-    logger.info(infohash, out)
     if out == b'yes':
         update_meta_info.delay(infohash)
     else:
