@@ -15,15 +15,15 @@ using namespace BTQUERY;
 
 int main(int argc, char* argv[])
 {
-    if argc != 2 {
-        return -1
+    if (argc != 2) {
+        return -1;
     }
     //base
     QueryParams params;
     std::string str_require;
     QueryResponse response;
     std::string str_response;
-    std::string infohash(argv[1])
+    std::string infohash(argv[1]);
 
     //���ò���
     params.infohash = infohash;
@@ -61,11 +61,6 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    //debug
-    printf("ver:%u seq:%u len:%u cliver:%u compress_flag:%d padd:%u cmd_id:%d result:%d compress:%d file_size:%u\n",
-    response.version, response.seq, response.len, response.client_ver, response.compress_flag, response.padding_len,
-    response.cmd_id, response.result, response.compress, response.bt_file.size());
-
     //����response
     if(2 == response.result)
     {
@@ -75,7 +70,7 @@ int main(int argc, char* argv[])
     {
         printf("yes");
         //����
-        std::string file_path = "/tmp/torrent/" + infohash + ".torrent"
+        std::string file_path = "/tmp/torrent/" + infohash + ".torrent";
         FILE *pFile_save = fopen(file_path.c_str(), "w");
         if(!pFile_save)
         {

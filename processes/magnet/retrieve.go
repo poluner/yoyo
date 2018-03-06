@@ -1,29 +1,36 @@
 package main
 
 import (
+	"fmt"
 	log "github.com/alecthomas/log4go"
+	"github.com/anacrolix/torrent/metainfo"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/olivere/elastic"
 	"golang.org/x/net/context"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"time"
 )
 
 var (
 	dbConnection *gorm.DB
 	esClient     *elastic.Client
+	getTorrent   string
 )
 
 type File struct {
-	Path   []interface{} `json:"path"`
-	Length int           `json:"length"`
+	Path   []string `json:"path"`
+	Length int64    `json:"length"`
 }
 
 type BitTorrent struct {
 	Name        string    `json:"name"`
 	Name2       string    `json:"name2"`
 	Files       []File    `json:"files,omitempty"`
-	Length      int       `json:"length,omitempty"`
+	Length      int64     `json:"length,omitempty"`
 	CollectedAt time.Time `json:"collected_at"`
 }
 
@@ -54,6 +61,62 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	currentFile, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		panic(err)
+	}
+	absPath, err := filepath.Abs(currentFile)
+	if err != nil {
+		panic(err)
+	}
+	currentDir, _ := path.Split(absPath)
+	getTorrent = path.Join(currentDir, "gettorrent")
+}
+
+func downloadTorrent(infohash string) (success bool, err error) {
+	cmd := exec.Command(getTorrent, infohash)
+	out, err := cmd.Output()
+	if err != nil {
+		return
+	}
+
+	if string(out) == "yes" {
+		success = true
+	}
+	return
+}
+
+func retrieveMetaData(infohash string) (bt *BitTorrent, err error) {
+	torrentPath := fmt.Sprintf("/tmp/torrent/%s.torrent", infohash)
+	mi, err := metainfo.LoadFromFile(torrentPath)
+	if err != nil {
+		return
+	}
+
+	info, err := mi.UnmarshalInfo()
+	if err != nil {
+		return
+	}
+
+	bt = &BitTorrent{
+		Name:        info.Name,
+		Name2:       info.Name,
+		Length:      info.Length,
+		CollectedAt: time.Now(),
+	}
+	var total int64
+	for _, file := range info.Files {
+		total += file.Length
+		bt.Files = append(bt.Files, File{
+			Length: file.Length,
+			Path:   file.Path,
+		})
+	}
+	if total > 0 {
+		bt.Length = total
+	}
+	return
 }
 
 func main() {
@@ -65,7 +128,29 @@ func main() {
 		}
 
 		for _, record := range records {
+			success, err := downloadTorrent(record.Infohash)
+			if err != nil {
+				continue
+			}
 
+			if !success {
+				dbConnection.Table("infohash_task").Where(
+					"infohash = ?", record.Infohash).UpdateColumn("status", 2)
+				continue
+			}
+
+			bt, err := retrieveMetaData(record.Infohash)
+			if err != nil {
+				continue
+			}
+
+			_, err = esClient.Index().Index("torrent").Type(
+				"doc").Id(record.Infohash).BodyJson(bt).Do(context.Background())
+			if err != nil {
+				continue
+			}
+			dbConnection.Table("infohash_task").Where(
+				"infohash = ?", record.Infohash).UpdateColumn("status", 1)
 		}
 	}
 }
