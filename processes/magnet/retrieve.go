@@ -137,7 +137,6 @@ func main() {
 			if !success {
 				dbConnection.Table("infohash_task").Where(
 					"infohash = ?", record.Infohash).UpdateColumn("status", 2)
-				log.Error(err)
 				continue
 			}
 
