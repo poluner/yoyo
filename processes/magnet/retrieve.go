@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	log "github.com/alecthomas/log4go"
 	"github.com/anacrolix/torrent/metainfo"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -49,8 +48,6 @@ func (Infohash) TableName() string {
 }
 
 func init() {
-	log.LoadConfiguration("logging.xml")
-
 	var err error
 	dbConnection, err = gorm.Open("mysql", "watchnow:watchnow2018@tcp(172.31.21.32:3306)/yoyo?charset=utf8mb4&parseTime=True&loc=Local")
 	if err != nil {
@@ -132,6 +129,7 @@ func main() {
 			if err != nil {
 				continue
 			}
+			fmt.Println(record.Infohash, success)
 
 			if !success {
 				dbConnection.Table("infohash_task").Where(
