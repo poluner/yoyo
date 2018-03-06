@@ -1,0 +1,36 @@
+version: 1
+disable_existing_loggers: no
+
+formatters:
+  simple:
+    format: '%(asctime)s\t%(message)s'
+  detail:
+    format: '%(asctime)s [%(process)d] [%(levelname)s] : %(message)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: detail
+    stream: ext://sys.stdout
+  sync:
+    class: logging.handlers.WatchedFileHandler
+    level: INFO
+    formatter: detail
+    filename: /data/logs/yoyo/magnet/retrieve.log
+
+loggers:
+  yoyo.console:
+    level: DEBUG
+    handlers: [console]
+    propagate: no
+    qualname: yoyo.console
+  yoyo.celery:
+    level: INFO
+    handlers: [celery]
+    propagate: no
+    qualname: yoyo.celery
+
+root:
+  level: DEBUG
+  handlers: [console]

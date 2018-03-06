@@ -1,10 +1,12 @@
 # -*- coding:utf-8 -*-
 """更新es"""
 import os
+import logging
 import datetime
 import traceback
-import subprocess
+import logging.config
 
+import yaml
 import torrent_parser as tp
 from elasticsearch import Elasticsearch
 from sqlalchemy import (
@@ -19,6 +21,15 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import DisconnectionError
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from celery import Celery
+
+current_dir = os.path.dirname(__file__)
+logging_path = os.path.join(current_dir, 'logging.yaml')
+get_torrent_path = os.path.join(current_dir, 'gettorrent')
+
+with open(logging_path, 'r') as f:
+    logging.config.dictConfig(yaml.load(f))
+logger = logging.getLogger("yoyo.celery")
 
 es_hosts = ["172.31.23.5:9200", "172.31.23.5:9201", "172.31.10.234:9200"]
 db_url = "mysql+pymysql://watchnow:watchnow2018@172.31.21.32:3306/yoyo?charset=utf8mb4"
@@ -46,6 +57,8 @@ DBSession = sessionmaker(bind=faceless_engine, expire_on_commit=False)
 
 
 es_client = Elasticsearch(es_hosts)
+celery_app = Celery("yoyo")
+celery_app.config_from_object("magnet.celeryconfig")
 
 
 class Infohash(BaseModel):
@@ -74,55 +87,3 @@ class Infohash(BaseModel):
         session.commit()
         return records
 
-
-def retrieve_meta_info(infohash):
-    torrent_path = "/tmp/torrent/{}.torrent".format(infohash)
-    content = tp.parse_torrent_file(torrent_path)
-    meta_info = content.pop('info')
-    name = meta_info.pop('name')
-    now = datetime.datetime.now()
-    collected_at = now.strftime('%Y-%m-%dT%H:%M:%S.000000000Z')
-    result = {
-        'name': name,
-        'name2': name,
-        'collected_at': collected_at,
-    }
-    if 'length' in meta_info:
-        length = meta_info.pop('length')
-        result['length'] = length
-    else:
-        files = meta_info.pop('files')
-        length = 0
-        new_files = []
-        for item in files:
-            length += item['length']
-            new_files.append({
-                'length': item['length'],
-                'path': item['path']
-            })
-        result['length'] = length
-        result['files'] = new_files
-    return result
-
-
-if __name__ == '__main__':
-    file_path = os.path.abspath(__file__)
-    current_dir = os.path.dirname(file_path)
-    get_torrent_path = os.path.join(current_dir, 'gettorrent')
-    while True:
-        records = Infohash.ready_records(100)
-        if not records:
-            break
-
-        for record in records:
-            try:
-                out = subprocess.check_output("{} {}".format(get_torrent_path, record.infohash), shell=True)
-                print(record.infohash, out)
-                if out == b'yes':
-                    meta_info = retrieve_meta_info(record.infohash)
-                    es_client.index('torrent', 'doc', meta_info, id=record.infohash)
-                    Infohash.update_status(record.infohash, 1)
-                else:
-                    Infohash.update_status(record.infohash, 2)
-            except:
-                traceback.print_exc()
