@@ -119,45 +119,39 @@ func retrieveMetaData(infohash string) (bt *BitTorrent, err error) {
 	return
 }
 
-func processRecord(record Infohash) {
-	success, err := downloadTorrent(record.Infohash)
-	if err != nil {
-		return
-	}
-	log.Info("%s\t%t", record.Infohash, success)
-
-	if !success {
-		dbConnection.Table("infohash_task").Where(
-			"infohash = ?", record.Infohash).UpdateColumn("status", 2)
-		return
-	}
-
-	bt, err := retrieveMetaData(record.Infohash)
-	if err != nil {
-		return
-	}
-
-	_, err = esClient.Index().Index("torrent").Type(
-		"doc").Id(record.Infohash).BodyJson(bt).Do(context.Background())
-	if err != nil {
-		return
-	}
-	dbConnection.Table("infohash_task").Where(
-		"infohash = ?", record.Infohash).UpdateColumn("status", 1)
-}
-
 func main() {
+	var records []Infohash
 	for {
-		var records []Infohash
 		findResult := dbConnection.Where("status = ?", 0).Limit(100).Find(&records)
 		if findResult.RecordNotFound() {
 			break
 		}
 
 		for _, record := range records {
-			go processRecord(record)
-		}
+			success, err := downloadTorrent(record.Infohash)
+			if err != nil {
+				continue
+			}
+			log.Info("%s\t%t", record.Infohash, success)
 
-		time.Sleep(time.Second * 10)
+			if !success {
+				dbConnection.Table("infohash_task").Where(
+					"infohash = ?", record.Infohash).UpdateColumn("status", 2)
+				continue
+			}
+
+			bt, err := retrieveMetaData(record.Infohash)
+			if err != nil {
+				continue
+			}
+
+			_, err = esClient.Index().Index("torrent").Type(
+				"doc").Id(record.Infohash).BodyJson(bt).Do(context.Background())
+			if err != nil {
+				continue
+			}
+			dbConnection.Table("infohash_task").Where(
+				"infohash = ?", record.Infohash).UpdateColumn("status", 1)
+		}
 	}
 }
