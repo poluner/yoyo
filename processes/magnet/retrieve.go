@@ -129,12 +129,8 @@ func main() {
 
 		for _, record := range records {
 			success, err := downloadTorrent(record.Infohash)
-			if err != nil {
-				continue
-			}
-			log.Info("%s\t%t", record.Infohash, success)
-
-			if !success {
+			log.Info("%s\t%t\t%v", record.Infohash, success, err)
+			if err != nil || !success {
 				dbConnection.Table("infohash_task").Where(
 					"infohash = ?", record.Infohash).UpdateColumn("status", 2)
 				continue
