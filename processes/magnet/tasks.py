@@ -72,4 +72,4 @@ def begin_task():
             download_torrent.delay(record.infohash)
 
         offset += limit
-        time.sleep(2)
+        time.sleep(10)
