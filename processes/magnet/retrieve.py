@@ -2,6 +2,7 @@
 """更新es"""
 import os
 import datetime
+import traceback
 import subprocess
 
 import torrent_parser as tp
@@ -109,10 +110,13 @@ if __name__ == '__main__':
             break
 
         for record in records:
-            out = subprocess.check_output("{} {}".format(get_torrent_path, record.infohash))
-            if out == b'yes':
-                meta_info = retrieve_meta_info(record.infohash)
-                es_client.index('torrent', 'doc', meta_info, id=record.infohash)
-                Infohash.update_status(record.infohash, 1)
-            else:
-                Infohash.update_status(record.infohash, 2)
+            try:
+                out = subprocess.check_output("{} {}".format(get_torrent_path, record.infohash), shell=True)
+                if out == b'yes':
+                    meta_info = retrieve_meta_info(record.infohash)
+                    es_client.index('torrent', 'doc', meta_info, id=record.infohash)
+                    Infohash.update_status(record.infohash, 1)
+                else:
+                    Infohash.update_status(record.infohash, 2)
+            except Exception:
+                traceback.print_exc()
