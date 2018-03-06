@@ -93,10 +93,15 @@ def retrieve_meta_info(infohash):
     else:
         files = meta_info.pop('files')
         length = 0
+        new_files = []
         for item in files:
             length += item['length']
+            new_files.append({
+                'length': item['length'],
+                'path': item['path']
+            })
         result['length'] = length
-        result['files'] = files
+        result['files'] = new_files
     return result
 
 
