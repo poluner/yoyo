@@ -112,6 +112,7 @@ if __name__ == '__main__':
         for record in records:
             try:
                 out = subprocess.check_output("{} {}".format(get_torrent_path, record.infohash), shell=True)
+                print(record.infohash, out)
                 if out == b'yes':
                     meta_info = retrieve_meta_info(record.infohash)
                     es_client.index('torrent', 'doc', meta_info, id=record.infohash)
