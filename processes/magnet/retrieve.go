@@ -119,7 +119,7 @@ func retrieveMetaData(infohash string) (bt *BitTorrent, err error) {
 	return
 }
 
-func processRecord(record *Infohash) {
+func processRecord(record Infohash) {
 	success, err := downloadTorrent(record.Infohash)
 	if err != nil {
 		return
@@ -155,7 +155,7 @@ func main() {
 		}
 
 		for _, record := range records {
-			go processRecord(&record)
+			go processRecord(record)
 		}
 
 		time.Sleep(time.Second * 10)
