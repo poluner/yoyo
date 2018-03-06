@@ -13,7 +13,7 @@ handlers:
     level: DEBUG
     formatter: detail
     stream: ext://sys.stdout
-  sync:
+  celery:
     class: logging.handlers.WatchedFileHandler
     level: INFO
     formatter: detail
