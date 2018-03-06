@@ -1,0 +1,4 @@
+elasticsearch==6.1.1
+SQLAlchemy==1.2.4
+PyMySQL==0.8.0
+torrent-parser==0.1.2
