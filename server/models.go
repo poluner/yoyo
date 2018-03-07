@@ -82,7 +82,7 @@ func termSuggest(text string) (result []string, err error) {
 	}
 
 	for _, suggest := range suggestResult {
-		if len(result) > 10 {
+		if len(result) > 8 {
 			break
 		}
 
@@ -121,8 +121,8 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 		search = search.Query(query)
 	} else {
 		query := elastic.NewBoolQuery()
-		nameQuery := elastic.NewMatchQuery("name", input)
-		pathQuery := elastic.NewMatchQuery("files.path", input)
+		nameQuery := elastic.NewMatchQuery("name", input).Boost(5.0)
+		pathQuery := elastic.NewMatchQuery("files.path", input).Boost(1.0)
 		query = query.Should(nameQuery, pathQuery)
 		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
