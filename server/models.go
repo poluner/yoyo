@@ -127,7 +127,7 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
-		search.MinScore(1.0)
+		search.MinScore(10.0)
 	}
 
 	search = search.From(offset).Size(limit)
