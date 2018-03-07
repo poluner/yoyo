@@ -81,16 +81,14 @@ func termSuggest(text string) (result []string, err error) {
 		return
 	}
 
-	segments := make([]string, 0, 5)
 	for _, suggest := range suggestResult {
 		if suggest.Options == nil || len(suggest.Options) == 0 {
-			segments = append(segments, suggest.Text)
+			result = append(result, suggest.Text)
 		} else {
-			segments = append(segments, suggest.Options[0].Text)
+			result = append(result, suggest.Options[0].Text)
 		}
 	}
 
-	result = append(result, strings.Join(segments, " "))
 	return
 }
 
@@ -136,6 +134,10 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 
 	total = res.TotalHits()
 	for _, hit := range res.Hits.Hits {
+		if *hit.Score < 1.0 {
+			break
+		}
+
 		item := EsTorrent{}
 		err = json.Unmarshal(*hit.Source, &item)
 		if err != nil {
