@@ -82,6 +82,10 @@ func termSuggest(text string) (result []string, err error) {
 	}
 
 	for _, suggest := range suggestResult {
+		if len(result) > 10 {
+			break
+		}
+
 		if suggest.Options == nil || len(suggest.Options) == 0 {
 			result = append(result, suggest.Text)
 		} else {
