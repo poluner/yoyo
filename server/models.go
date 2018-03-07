@@ -120,11 +120,10 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 		nameQuery := elastic.NewMatchQuery("name", input)
 		pathQuery := elastic.NewMatchQuery("files.path", input)
 		query = query.Should(nameQuery, pathQuery)
-		scoreFilter := elastic.NewRangeQuery("_score").Gte(1.0)
-		query = query.Filter(scoreFilter)
 		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
+		search.MinScore(1.0)
 	}
 
 	search = search.From(offset).Size(limit)
