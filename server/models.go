@@ -154,15 +154,20 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 			continue
 		}
 
-		result = append(result, Torrent{
+		t := Torrent{
 			Infohash:    hit.Id,
 			Name:        item.Name,
 			Length:      item.Length,
 			Download:    item.Download,
-			Files:       item.Files,
 			CollectedAt: JsonTime{item.CollectedAt},
 			Highlight:   hit.Highlight,
-		})
+		}
+		for _, f := range item.Files {
+			if !strings.HasPrefix(f.Path[0], "_____padding_file") {
+				t.Files = append(t.Files, f)
+			}
+		}
+		result = append(result, t)
 	}
 	return
 }
