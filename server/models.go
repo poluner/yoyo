@@ -48,7 +48,6 @@ type Torrent struct {
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
 
-// NewCompletionSuggester 添加 SkipDuplicate 字段
 func completionSuggest(text string, size int) (result []string, err error) {
 	result = make([]string, 0, size)
 	search := esClient.Search().Index(esIndex).Type(esType)
@@ -61,6 +60,26 @@ func completionSuggest(text string, size int) (result []string, err error) {
 	}
 
 	suggestResult := searchResult.Suggest["completion-suggest"]
+	for _, suggest := range suggestResult {
+		for _, option := range suggest.Options {
+			result = append(result, option.Text)
+		}
+	}
+	return
+}
+
+func phraseSuggest(text string, size int) (result []string, err error) {
+	result = make([]string, 0, 1)
+	search := esClient.Search().Index(esIndex).Type(esType)
+	suggester := elastic.NewPhraseSuggester("phrase-suggest").
+		Text(text).Field("name").Size(size)
+	search = search.Suggester(suggester)
+	searchResult, err := search.Do(context.Background())
+	if err != nil {
+		return
+	}
+
+	suggestResult := searchResult.Suggest["phrase-suggest"]
 	for _, suggest := range suggestResult {
 		for _, option := range suggest.Options {
 			result = append(result, option.Text)
