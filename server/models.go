@@ -68,26 +68,6 @@ func completionSuggest(text string, size int) (result []string, err error) {
 	return
 }
 
-func phraseSuggest(text string, size int) (result []string, err error) {
-	result = make([]string, 0, 1)
-	search := esClient.Search().Index(esIndex).Type(esType)
-	suggester := elastic.NewPhraseSuggester("phrase-suggest").
-		Text(text).Field("name").Size(size)
-	search = search.Suggester(suggester)
-	searchResult, err := search.Do(context.Background())
-	if err != nil {
-		return
-	}
-
-	suggestResult := searchResult.Suggest["phrase-suggest"]
-	for _, suggest := range suggestResult {
-		for _, option := range suggest.Options {
-			result = append(result, option.Text)
-		}
-	}
-	return
-}
-
 func termSuggest(text string, size int) (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
