@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	maxResultWindow = 8000
+)
+
 var (
 	esClient *elastic.Client
 )
@@ -65,7 +69,7 @@ func completionSuggest(text string, size int) (result []string, err error) {
 	return
 }
 
-func termSuggest(text string) (result []string, err error) {
+func termSuggest(text string, size int) (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
 	suggester := elastic.NewTermSuggester("term-suggest").
@@ -82,7 +86,7 @@ func termSuggest(text string) (result []string, err error) {
 	}
 
 	for _, suggest := range suggestResult {
-		if len(result) > 8 {
+		if len(result) > size {
 			break
 		}
 
@@ -108,12 +112,16 @@ func EsSuggest(text string, size int) (result []string, err error) {
 		return
 	}
 
-	result, err = termSuggest(input)
+	result, err = termSuggest(input, size)
 	return
 }
 
 func EsSearch(text string, offset int, limit int) (total int64, result []Torrent, err error) {
 	result = make([]Torrent, 0, limit)
+	if offset+limit > maxResultWindow {
+		return
+	}
+
 	input := strings.TrimSpace(text)
 	search := esClient.Search().Index(esIndex).Type(esType)
 	if input == "" {
@@ -137,6 +145,9 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 	}
 
 	total = res.TotalHits()
+	if total > maxResultWindow {
+		total = maxResultWindow
+	}
 	for _, hit := range res.Hits.Hits {
 		item := EsTorrent{}
 		err = json.Unmarshal(*hit.Source, &item)
