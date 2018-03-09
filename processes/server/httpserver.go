@@ -8,7 +8,6 @@ import (
 
 	log "github.com/alecthomas/log4go"
 	"github.com/fvbock/endless"
-	"github.com/getsentry/raven-go"
 	"github.com/gin-gonic/gin"
 
 	"github.com/LiuRoy/yoyo/server"
@@ -40,12 +39,7 @@ func main() {
 	router := gin.New()
 	metricPath := fmt.Sprintf("/%s/metrics", server.ProjectName)
 	router.Use(server.Metrics(metricPath))
-
-	sentryClient, err := raven.New(server.SentryUrl)
-	if err != nil {
-		panic(err)
-	}
-	router.Use(server.Recovery(sentryClient))
+	router.Use(server.Recovery())
 
 	// 监控接口
 	router.GET(metricPath, server.GetMetrics)

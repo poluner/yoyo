@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"runtime"
 
 	log "github.com/alecthomas/log4go"
-	"github.com/getsentry/raven-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,18 +19,11 @@ var (
 	slash     = []byte("/")
 )
 
-func Recovery(client *raven.Client) gin.HandlerFunc {
+func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				endPoint := c.Request.URL.Path
-				flags := map[string]string{"endpoint": endPoint}
-
-				errStr := fmt.Sprint(err)
-				packet := raven.NewPacket(errStr, raven.NewException(errors.New(errStr),
-					raven.NewStacktrace(3, 3, nil)))
-				client.Capture(packet, flags)
-
 				stack := stack(3)
 				httpRequest, _ := httputil.DumpRequest(c.Request, true)
 				log.Error("%s\n%s", string(httpRequest), string(stack))
