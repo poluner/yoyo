@@ -63,15 +63,16 @@ def download_torrent(infohash):
 
 
 @celery_app.task
-def begin_task():
-    offset, limit = 0, 100
-    while True:
-        records = Infohash.ready_records(offset, limit)
-        if not records:
-            break
+def begin_task(offset):
+    limit = 100
+    records = Infohash.ready_records(offset, limit)
+    if not records:
+        return
 
-        for record in records:
-            download_torrent.delay(record.infohash)
+    for record in records:
+        download_torrent.delay(record.infohash)
 
-        offset += limit
-        time.sleep(10)
+    offset += limit
+    if offset > 200000:
+        offset = 0
+    begin_task.apply_async((offset,), countdown=10)
