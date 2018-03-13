@@ -132,6 +132,7 @@ func finishTask(infohash string, bt *BitTorrent) {
 
 	var total int
 	dbConnection.Table("announce_peer").Where("infohash = ?", infohash).Count(&total)
+	log.Info("total %s %d", infohash, total)
 	if total > 0 {
 		param := updatePost{
 			Hot:  total,
