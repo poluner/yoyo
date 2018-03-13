@@ -202,6 +202,7 @@ func EsUpdateMetaData(infohash string, meta *updatePost) (err error) {
 			item.Name = meta.Meta.Name
 			item.Name2 = item.Name
 			item.Files = meta.Meta.Files
+			item.Download = meta.Hot
 			item.CollectedAt = time.Now()
 
 			var total int
