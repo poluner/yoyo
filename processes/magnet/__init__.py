@@ -3,11 +3,9 @@
 import os
 import logging
 import datetime
-import traceback
 import logging.config
 
 import yaml
-import torrent_parser as tp
 from elasticsearch import Elasticsearch
 from sqlalchemy import (
     event,
@@ -31,7 +29,6 @@ with open(logging_path, 'r') as f:
     logging.config.dictConfig(yaml.load(f))
 logger = logging.getLogger("yoyo.celery")
 
-es_hosts = ["172.31.23.5:9200", "172.31.23.5:9201", "172.31.10.234:9200"]
 db_url = "mysql+pymysql://watchnow:watchnow2018@172.31.21.32:3306/yoyo?charset=utf8mb4"
 
 
@@ -48,20 +45,19 @@ def checkout_listener(dbapi_con, con_record, con_proxy):
             raise
 
 BaseModel = declarative_base()
-faceless_engine = create_engine(
+yoyo_engine = create_engine(
     db_url,
     pool_size=100,
     pool_recycle=3600)
-event.listen(faceless_engine, 'checkout', checkout_listener)
-DBSession = sessionmaker(bind=faceless_engine, expire_on_commit=False)
+event.listen(yoyo_engine, 'checkout', checkout_listener)
+DBSession = sessionmaker(bind=yoyo_engine, expire_on_commit=False)
 
 
-es_client = Elasticsearch(es_hosts)
 celery_app = Celery("yoyo")
 celery_app.config_from_object("magnet.celeryconfig")
 
 
-class Infohash(BaseModel):
+class InfohashTask(BaseModel):
 
     __tablename__ = 'infohash_task'
 
@@ -85,3 +81,20 @@ class Infohash(BaseModel):
         records = session.query(cls).filter(cls.status == 0).offset(offset).limit(size).all()
         session.commit()
         return records
+
+
+class AnnouncePeer(BaseModel):
+
+    __tablename__ = 'announce_peer'
+
+    id = Column(Integer, primary_key=True)
+    infohash = Column(String(40), nullable=False)
+    address = Column(String(20), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.datetime.now)
+
+    @classmethod
+    def get_hot(cls, infohash):
+        session = DBSession()
+        result = session.query(cls).filter(cls.infohash == infohash).count()
+        session.commit()
+        return result

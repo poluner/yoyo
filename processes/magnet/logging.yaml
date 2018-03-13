@@ -17,7 +17,7 @@ handlers:
     class: logging.handlers.WatchedFileHandler
     level: INFO
     formatter: detail
-    filename: /data/logs/yoyo/magnet/retrieve.log
+    filename: /data2/logs/yoyo/retrieve.log
 
 loggers:
   yoyo.console:

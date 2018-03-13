@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -14,6 +15,18 @@ type searchParam struct {
 	Text   string `form:"text"`
 	Offset int    `form:"offset"`
 	Limit  int    `form:"limit"`
+}
+
+type metaInfo struct {
+	Name   string     `json:"name"`
+	Length int        `json:"length"`
+	Files  []FileItem `json:"files,omitempty"`
+}
+
+type updatePost struct {
+	Meta     metaInfo `json:"info"`
+	Infohash string   `json:"infohash"`
+	Hot      int      `json:"hot"`
 }
 
 func Suggest(c *gin.Context) {
@@ -101,4 +114,31 @@ func UpdateDownloadCount(c *gin.Context) {
 			"code":   paramsInvalid,
 		})
 	}
+}
+
+func UpdateMetaInfo(c *gin.Context) {
+	var param updatePost
+	var err error
+	decoder := json.NewDecoder(c.Request.Body)
+	if err = decoder.Decode(&param); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": err,
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	err = EsUpdateMetaData(&param)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": err,
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+	})
 }

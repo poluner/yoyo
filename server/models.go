@@ -27,13 +27,14 @@ func init() {
 
 type FileItem struct {
 	Path   []string `json:"path"`
-	Length int64    `json:"length"`
+	Length int      `json:"length"`
 }
 
 type EsTorrent struct {
 	Name        string     `json:"name"`
+	Name2       string     `json:"name2"`
 	Download    int        `json:"hot"`
-	Length      int64      `json:"length"`
+	Length      int        `json:"length"`
 	CollectedAt time.Time  `json:"collected_at"`
 	Files       []FileItem `json:"files,omitempty"`
 }
@@ -41,7 +42,7 @@ type EsTorrent struct {
 type Torrent struct {
 	Infohash    string              `json:"infohash"`
 	Name        string              `json:"name"`
-	Length      int64               `json:"length"`
+	Length      int                 `json:"length"`
 	Download    int                 `json:"download"`
 	CollectedAt JsonTime            `json:"collected_at"`
 	Files       []FileItem          `json:"files,omitempty"`
@@ -187,5 +188,47 @@ func EsUpdateHot(infohash string) (err error) {
 
 	script := elastic.NewScript("ctx._source.hot=params.hot").Param("hot", item.Download+1)
 	_, err = esClient.Update().Index(esIndex).Type(esType).Id(infohash).Script(script).Do(ctx)
+	return
+}
+
+func EsUpdateMetaData(meta *updatePost) (err error) {
+	ctx := context.Background()
+	_, err = esClient.Get().Index(esIndex).Type(esType).Id(meta.Infohash).Do(ctx)
+
+	item := EsTorrent{}
+	if err != nil {
+		// not found
+		if meta.Meta.Name != "" {
+			item.Name = meta.Meta.Name
+			item.Name2 = item.Name
+			item.Files = meta.Meta.Files
+			item.CollectedAt = time.Now()
+
+			var total int
+			for _, file := range meta.Meta.Files {
+				total += file.Length
+			}
+			if total != 0 {
+				item.Length = total
+			} else {
+				item.Length = meta.Meta.Length
+			}
+
+			_, err = esClient.Index().Index(esIndex).Type(
+				esType).Id(meta.Infohash).BodyJson(item).Do(ctx)
+		}
+	} else {
+		// found
+		if meta.Hot != 0 {
+			script := elastic.NewScript("ctx._source.hot=params.hot;ctx._source.collected_at=params.collected_at").Params(
+				map[string]interface{}{
+					"hot":          meta.Hot,
+					"collected_at": time.Now(),
+				},
+			)
+			_, err = esClient.Update().Index(esIndex).Type(esType).Id(meta.Infohash).Script(script).Do(ctx)
+		}
+	}
+
 	return
 }

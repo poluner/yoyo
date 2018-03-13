@@ -8,15 +8,12 @@ import (
 	log "github.com/alecthomas/log4go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"github.com/olivere/elastic"
-	"golang.org/x/net/context"
 	"time"
 )
 
 var (
 	dbConnection *gorm.DB
 	wire         *dht.Wire
-	esClient     *elastic.Client
 )
 
 type File struct {
@@ -25,25 +22,33 @@ type File struct {
 }
 
 type BitTorrent struct {
-	Name        string    `json:"name"`
-	Name2       string    `json:"name2"`
-	Files       []File    `json:"files,omitempty"`
-	Length      int       `json:"length,omitempty"`
-	CollectedAt time.Time `json:"collected_at"`
+	Name   string `json:"name"`
+	Files  []File `json:"files,omitempty"`
+	Length int    `json:"length,omitempty"`
 }
 
-type Infohash struct {
-	Id           uint64    `gorm:"column:id;type:bigint;primary_key"`
-	Infohash     string    `gorm:"column:infohash;type:varchar(40)"`
-	GetPeer      uint32    `gorm:"column:get_peer;type:int"`
-	AnnouncePeer uint32    `gorm:"column:announce_peer;type:int"`
-	Status       uint8     `gorm:"column:status;type:tinyint"`
-	CreatedAt    time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
-	UpdatedAt    time.Time `gorm:"column:updated_at" sql:"DEFAULT:current_timestamp"`
+type InfohashTask struct {
+	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
+	Infohash  string    `gorm:"column:infohash;type:varchar(40)"`
+	Status    uint8     `gorm:"column:status;type:tinyint"`
+	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+	UpdatedAt time.Time `gorm:"column:updated_at" sql:"DEFAULT:current_timestamp"`
 }
 
-func (Infohash) TableName() string {
+func (InfohashTask) TableName() string {
 	return "infohash_task"
+}
+
+type AnnouncePeer struct {
+	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
+	Infohash  string    `gorm:"column:infohash;type:varchar(40)"`
+	Address   string    `gorm:"column:address;type:varchar(20)"`
+	Detail    string    `gorm:"column:detail;type:text"`
+	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+}
+
+func (AnnouncePeer) TableName() string {
+	return "announce_peer"
 }
 
 func init() {
@@ -51,11 +56,6 @@ func init() {
 
 	var err error
 	dbConnection, err = gorm.Open("mysql", "watchnow:watchnow2018@tcp(172.31.21.32:3306)/yoyo?charset=utf8mb4&parseTime=True&loc=Local")
-	if err != nil {
-		panic(err)
-	}
-
-	esClient, err = elastic.NewClient(elastic.SetURL("http://172.31.23.5:9200", "http://172.31.23.5:9201", "http://172.31.10.234:9200"))
 	if err != nil {
 		panic(err)
 	}
@@ -77,7 +77,6 @@ func init() {
 			bt := BitTorrent{
 				Name: info["name"].(string),
 			}
-			bt.Name2 = bt.Name
 
 			if v, ok := info["files"]; ok {
 				files := v.([]interface{})
@@ -94,7 +93,7 @@ func init() {
 				bt.Length = info["length"].(int)
 			}
 
-			insertIndex(infoHash, &bt)
+			finishTask(infoHash, &bt)
 			data, err := json.Marshal(bt)
 			if err == nil {
 				fmt.Printf("%s\n", infoHash)
@@ -105,79 +104,92 @@ func init() {
 	go wire.Run()
 }
 
-func insertDatabase(infoStr string, isAnnounce bool) (finished bool) {
-	var record Infohash
+func finishTask(infohash string, bt *BitTorrent) {
+	if dbConnection.Table("infohash_task").Where(
+		"infohash = ?", infohash).UpdateColumn("status", 1).Error != nil {
+		log.Error("%s update status to 1 failed", infohash)
+		return
+	}
+
+	var total int
+	dbConnection.Table("announce_peer").Where("infohash = ?", infohash).Count(&total)
+	if total > 0 {
+		// todo 更新个数 和 种子消息
+	}
+}
+
+func addGetPeerTask(infoStr string) {
 	infoHash := hex.EncodeToString([]byte(infoStr))
 	tx := dbConnection.Begin()
-	if tx.Where("infohash = ?", infoHash).Find(&record).RecordNotFound() {
-		record.Infohash = infoHash
-		if isAnnounce {
-			record.AnnouncePeer += 1
-		} else {
-			record.GetPeer += 1
-		}
-
-		if tx.Create(&record).Error != nil {
+	var task InfohashTask
+	if tx.Where("infohash = ?", infoHash).Find(&task).RecordNotFound() {
+		task.Infohash = infoHash
+		if tx.Create(&task).Error != nil {
 			tx.Rollback()
-			log.Error("%s insert failed", infoHash)
-		} else {
-			tx.Commit()
+			log.Error("addGetPeerTask %s insert infohash_task failed", infoHash)
+			return
+		}
+	}
+	tx.Commit()
+	return
+}
+
+func addAnnouncePeerTask(infoStr string, address string) (finished bool) {
+	infoHash := hex.EncodeToString([]byte(infoStr))
+	tx := dbConnection.Begin()
+	var task InfohashTask
+	if tx.Where("infohash = ?", infoHash).Find(&task).RecordNotFound() {
+		task.Infohash = infoHash
+
+		if tx.Create(&task).Error != nil {
+			tx.Rollback()
+			log.Error("addAnnnouncePeerTask %s insert infohash_task failed", infoHash)
+			return
 		}
 	} else {
-		var update Infohash
-		if isAnnounce {
-			update.AnnouncePeer = record.AnnouncePeer + 1
-		} else {
-			update.GetPeer = record.GetPeer + 1
-		}
-
-		if record.Status != 0 {
+		if task.Status != 0 {
 			finished = true
 		}
+	}
 
-		if tx.Model(&record).Updates(update).Error != nil {
+	var announce AnnouncePeer
+	var dupAddress bool
+	if tx.Where("infohash = ? and address = ?", infoHash,
+		address).Find(&announce).RecordNotFound() {
+		announce.Infohash = infoHash
+		announce.Address = address
+
+		if tx.Create(&announce).Error != nil {
 			tx.Rollback()
-			log.Error("%s update failed", infoHash)
-		} else {
-			tx.Commit()
+			log.Error("addAnnnouncePeerTask %s %s insert announce_peer failed", infoHash)
+			return
+		}
+	} else {
+		dupAddress = true
+	}
+	tx.Commit()
+
+	if task.Status == 1 && !dupAddress {
+		var total int
+		dbConnection.Table("announce_peer").Where("infohash = ?", infoHash).Count(&total)
+
+		if total > 0 {
+			// todo 更新个数
 		}
 	}
 	return
 }
 
-func insertIndex(infoHash string, bt *BitTorrent) {
-	var total int
-	for _, file := range bt.Files {
-		total += file.Length
-	}
-	if total != 0 {
-		bt.Length = total
-	}
-	bt.CollectedAt = time.Now()
-
-	_, err := esClient.Index().Index("torrent").Type(
-		"doc").Id(infoHash).BodyJson(bt).Do(context.Background())
-	if err != nil {
-		log.Error("%s insert es failed", infoHash)
-		return
-	}
-
-	err = dbConnection.Table("infohash_task").Where(
-		"infohash = ?", infoHash).UpdateColumn("status", 1).Error
-	if err != nil {
-		log.Error("%s update status to 1 failed", infoHash)
-	}
-}
-
 func main() {
 	config := dht.NewCrawlConfig()
 	config.OnAnnouncePeer = func(infoHash, ip string, port int) {
-		if !insertDatabase(infoHash, true) {
+		address := fmt.Sprintf("%s:%d", ip, port)
+		if !addAnnouncePeerTask(infoHash, address) {
 			wire.Request([]byte(infoHash), ip, port)
 		}
 	}
 	config.OnGetPeers = func(infoHash, ip string, port int) {
-		insertDatabase(infoHash, false)
+		addGetPeerTask(infoHash)
 	}
 	d := dht.New(config)
 

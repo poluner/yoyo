@@ -30,3 +30,14 @@ func TestEsUpdateHot(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestEsUpdateMetaData(t *testing.T) {
+	meta := updatePost{
+		Infohash: "111111",
+		Hot:      110,
+	}
+	err := EsUpdateMetaData(&meta)
+	if err != nil {
+		t.Fail()
+	}
+}
