@@ -75,7 +75,7 @@ func init() {
 	httpClient = &http.Client{}
 
 	var err error
-	dbConnection, err = gorm.Open("mysql", "watchnow:watchnow2018@tcp(172.31.21.32:3306)/yoyo?charset=utf8mb4&parseTime=True&loc=Local")
+	dbConnection, err = gorm.Open("mysql", "watchnow:watchnow@tcp(127.0.0.1:3307)/yoyo?charset=utf8mb4&parseTime=True&loc=Local")
 	if err != nil {
 		panic(err)
 	}
