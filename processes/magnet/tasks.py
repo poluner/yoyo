@@ -14,7 +14,7 @@ from . import (
 
 
 def retrieve_meta_info(infohash):
-    torrent_path = "/tmp/torrent/{}.torrent".format(infohash)
+    torrent_path = "/data2/torrent/{}.torrent".format(infohash)
     content = tp.parse_torrent_file(torrent_path)
     meta_info = content.pop('info')
     name = meta_info.pop('name')

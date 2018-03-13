@@ -6,7 +6,6 @@ import datetime
 import logging.config
 
 import yaml
-from elasticsearch import Elasticsearch
 from sqlalchemy import (
     event,
     Column,

@@ -5,3 +5,4 @@ torrent-parser==0.1.2
 PyYAML==3.12
 celery==4.1.0
 redis==2.10.6
+requests==2.18.4
