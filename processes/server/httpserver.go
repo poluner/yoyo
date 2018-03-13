@@ -46,7 +46,7 @@ func main() {
 
 	router.GET("/yoyo/suggest", server.Suggest)
 	router.GET("/yoyo/search", server.Search)
-	router.POST("/yoyo/update", server.UpdateMetaInfo)
+	router.POST("/yoyo/:infohash/update", server.UpdateMetaInfo)
 	router.POST("/yoyo/:infohash/download", server.UpdateDownloadCount)
 
 	endless.ListenAndServe(address, router)

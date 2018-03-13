@@ -191,9 +191,9 @@ func EsUpdateHot(infohash string) (err error) {
 	return
 }
 
-func EsUpdateMetaData(meta *updatePost) (err error) {
+func EsUpdateMetaData(infohash string, meta *updatePost) (err error) {
 	ctx := context.Background()
-	_, err = esClient.Get().Index(esIndex).Type(esType).Id(meta.Infohash).Do(ctx)
+	_, err = esClient.Get().Index(esIndex).Type(esType).Id(infohash).Do(ctx)
 
 	item := EsTorrent{}
 	if err != nil {
@@ -215,7 +215,7 @@ func EsUpdateMetaData(meta *updatePost) (err error) {
 			}
 
 			_, err = esClient.Index().Index(esIndex).Type(
-				esType).Id(meta.Infohash).BodyJson(item).Do(ctx)
+				esType).Id(infohash).BodyJson(item).Do(ctx)
 		}
 	} else {
 		// found
@@ -226,7 +226,7 @@ func EsUpdateMetaData(meta *updatePost) (err error) {
 					"collected_at": time.Now(),
 				},
 			)
-			_, err = esClient.Update().Index(esIndex).Type(esType).Id(meta.Infohash).Script(script).Do(ctx)
+			_, err = esClient.Update().Index(esIndex).Type(esType).Id(infohash).Script(script).Do(ctx)
 		}
 	}
 

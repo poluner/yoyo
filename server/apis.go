@@ -24,9 +24,8 @@ type metaInfo struct {
 }
 
 type updatePost struct {
-	Meta     metaInfo `json:"info"`
-	Infohash string   `json:"infohash"`
-	Hot      int      `json:"hot"`
+	Meta metaInfo `json:"info"`
+	Hot  int      `json:"hot"`
 }
 
 func Suggest(c *gin.Context) {
@@ -117,6 +116,8 @@ func UpdateDownloadCount(c *gin.Context) {
 }
 
 func UpdateMetaInfo(c *gin.Context) {
+	infohash := c.Param("infohash")
+
 	var param updatePost
 	var err error
 	decoder := json.NewDecoder(c.Request.Body)
@@ -128,7 +129,7 @@ func UpdateMetaInfo(c *gin.Context) {
 		return
 	}
 
-	err = EsUpdateMetaData(&param)
+	err = EsUpdateMetaData(infohash, &param)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": err,
