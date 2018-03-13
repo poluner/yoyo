@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -48,6 +49,11 @@ func Metrics(notLogged ...string) gin.HandlerFunc {
 		// Start timer
 		start := time.Now()
 		path := c.Request.URL.Path
+		if strings.HasSuffix(path, "download") {
+			path = fmt.Sprintf("/%s/:infohash/download", ProjectName)
+		} else if strings.HasSuffix(path, "update") {
+			path = fmt.Sprintf("/%s/:infohash/update", ProjectName)
+		}
 
 		// Process request
 		c.Next()
