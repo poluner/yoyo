@@ -128,14 +128,24 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 		query := elastic.NewMatchAllQuery()
 		search = search.Query(query)
 	} else {
-		query := elastic.NewBoolQuery()
-		nameQuery := elastic.NewMatchQuery("name", input).Boost(5.0)
-		pathQuery := elastic.NewMatchQuery("files.path", input).Boost(1.0)
-		query = query.Should(nameQuery, pathQuery)
+		boolQuery := elastic.NewBoolQuery()
+		nameQuery := elastic.NewMatchQuery("name", input)
+		pathQuery := elastic.NewMatchQuery("files.path", input)
+		boolQuery = boolQuery.Should(nameQuery, pathQuery)
+
+		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
+		query = query.Query(boolQuery)
+
+		hotFunction := elastic.NewFieldValueFactorFunction()
+		hotFunction = hotFunction.Field("hot").Modifier("sqrt").Missing(0.0)
+		collectFunction := elastic.NewGaussDecayFunction().FieldName("collected_at")
+		collectFunction = collectFunction.Origin(time.Now()).Offset("2d").Scale("300d").Decay(0.5)
+		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
+
 		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
-		search = search.MinScore(10.0)
+		search = search.MinScore(1.0)
 	}
 
 	search = search.From(offset).Size(limit)
