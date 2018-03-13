@@ -51,7 +51,6 @@ type AnnouncePeer struct {
 	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
 	Infohash  string    `gorm:"column:infohash;type:varchar(40)"`
 	Address   string    `gorm:"column:address;type:varchar(20)"`
-	Detail    string    `gorm:"column:detail;type:text"`
 	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
 }
 
