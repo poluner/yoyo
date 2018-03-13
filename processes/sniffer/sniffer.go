@@ -65,6 +65,7 @@ func updateEs(infohash string, bt *updatePost) (err error) {
 	}
 
 	url := fmt.Sprintf("http://api.watchnow.n0909.com/yoyo/%s/update", infohash)
+	log.Info("%s %s", url, postValue)
 	_, err = httpClient.Post(url, "application/json", bytes.NewBuffer(postValue))
 	return
 }
@@ -132,7 +133,6 @@ func finishTask(infohash string, bt *BitTorrent) {
 
 	var total int
 	dbConnection.Table("announce_peer").Where("infohash = ?", infohash).Count(&total)
-	log.Info("total %s %d", infohash, total)
 	if total > 0 {
 		param := updatePost{
 			Hot:  total,
