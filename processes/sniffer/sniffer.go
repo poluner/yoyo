@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -8,12 +9,14 @@ import (
 	log "github.com/alecthomas/log4go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"net/http"
 	"time"
 )
 
 var (
 	dbConnection *gorm.DB
 	wire         *dht.Wire
+	httpClient   *http.Client
 )
 
 type File struct {
@@ -25,6 +28,11 @@ type BitTorrent struct {
 	Name   string `json:"name"`
 	Files  []File `json:"files,omitempty"`
 	Length int    `json:"length,omitempty"`
+}
+
+type updatePost struct {
+	Meta BitTorrent `json:"info"`
+	Hot  int        `json:"hot"`
 }
 
 type InfohashTask struct {
@@ -51,8 +59,20 @@ func (AnnouncePeer) TableName() string {
 	return "announce_peer"
 }
 
+func updateEs(infohash string, bt *updatePost) (err error) {
+	postValue, err := json.Marshal(bt)
+	if err != nil {
+		return
+	}
+
+	url := fmt.Sprintf("http://api.watchnow.n0909.com/yoyo/%s/update", infohash)
+	_, err = httpClient.Post(url, "application/json", bytes.NewBuffer(postValue))
+	return
+}
+
 func init() {
 	log.LoadConfiguration("logging.xml")
+	httpClient = &http.Client{}
 
 	var err error
 	dbConnection, err = gorm.Open("mysql", "watchnow:watchnow2018@tcp(172.31.21.32:3306)/yoyo?charset=utf8mb4&parseTime=True&loc=Local")
@@ -114,7 +134,11 @@ func finishTask(infohash string, bt *BitTorrent) {
 	var total int
 	dbConnection.Table("announce_peer").Where("infohash = ?", infohash).Count(&total)
 	if total > 0 {
-		// todo 更新个数 和 种子消息
+		param := updatePost{
+			Hot:  total,
+			Meta: *bt,
+		}
+		updateEs(infohash, &param)
 	}
 }
 
@@ -135,15 +159,15 @@ func addGetPeerTask(infoStr string) {
 }
 
 func addAnnouncePeerTask(infoStr string, address string) (finished bool) {
-	infoHash := hex.EncodeToString([]byte(infoStr))
+	infohash := hex.EncodeToString([]byte(infoStr))
 	tx := dbConnection.Begin()
 	var task InfohashTask
-	if tx.Where("infohash = ?", infoHash).Find(&task).RecordNotFound() {
-		task.Infohash = infoHash
+	if tx.Where("infohash = ?", infohash).Find(&task).RecordNotFound() {
+		task.Infohash = infohash
 
 		if tx.Create(&task).Error != nil {
 			tx.Rollback()
-			log.Error("addAnnnouncePeerTask %s insert infohash_task failed", infoHash)
+			log.Error("addAnnnouncePeerTask %s insert infohash_task failed", infohash)
 			return
 		}
 	} else {
@@ -154,14 +178,14 @@ func addAnnouncePeerTask(infoStr string, address string) (finished bool) {
 
 	var announce AnnouncePeer
 	var dupAddress bool
-	if tx.Where("infohash = ? and address = ?", infoHash,
+	if tx.Where("infohash = ? and address = ?", infohash,
 		address).Find(&announce).RecordNotFound() {
-		announce.Infohash = infoHash
+		announce.Infohash = infohash
 		announce.Address = address
 
 		if tx.Create(&announce).Error != nil {
 			tx.Rollback()
-			log.Error("addAnnnouncePeerTask %s %s insert announce_peer failed", infoHash)
+			log.Error("addAnnnouncePeerTask %s %s insert announce_peer failed", infohash)
 			return
 		}
 	} else {
@@ -171,10 +195,13 @@ func addAnnouncePeerTask(infoStr string, address string) (finished bool) {
 
 	if task.Status == 1 && !dupAddress {
 		var total int
-		dbConnection.Table("announce_peer").Where("infohash = ?", infoHash).Count(&total)
+		dbConnection.Table("announce_peer").Where("infohash = ?", infohash).Count(&total)
 
 		if total > 0 {
-			// todo 更新个数
+			param := updatePost{
+				Hot: total,
+			}
+			updateEs(infohash, &param)
 		}
 	}
 	return

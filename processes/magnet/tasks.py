@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """异步任务"""
+import requests
 import subprocess
 import torrent_parser as tp
 
@@ -39,7 +40,9 @@ def retrieve_meta_info(infohash):
 def update_meta_info(infohash):
     meta_info = retrieve_meta_info(infohash)
     hot = AnnouncePeer.get_hot(infohash)
-    # todo 更新热度和下载个数
+
+    url = 'http://api.watchnow.n0909.com/yoyo/{}/update'.format(infohash)
+    requests.post(url, json={'hot': hot, 'info': meta_info})
     InfohashTask.update_status(infohash, 1)
 
 
