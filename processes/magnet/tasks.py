@@ -49,7 +49,7 @@ def update_meta_info(infohash):
 @celery_app.task
 def download_torrent(infohash):
     out = subprocess.check_output(
-        "{} {}".format(get_torrent_path, infohash), shell=True)
+        "{} {}".format(get_torrent_path, infohash), shell=True, timeout=10)
     logger.info('{} {}'.format(infohash, out.decode()))
     if out == b'yes':
         update_meta_info.delay(infohash)
