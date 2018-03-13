@@ -28,7 +28,7 @@ with open(logging_path, 'r') as f:
     logging.config.dictConfig(yaml.load(f))
 logger = logging.getLogger("yoyo.celery")
 
-db_url = "mysql+pymysql://watchnow:watchnow2018@172.31.21.32:3306/yoyo?charset=utf8mb4"
+db_url = "mysql+pymysql://watchnow:watchnow@127.0.0.1:3307/yoyo?charset=utf8mb4"
 
 
 def checkout_listener(dbapi_con, con_record, con_proxy):
