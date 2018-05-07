@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	log "github.com/alecthomas/log4go"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/kinesis"
 	"github.com/aws/aws-xray-sdk-go/header"
 	_ "github.com/aws/aws-xray-sdk-go/plugins/beanstalk"
 	_ "github.com/aws/aws-xray-sdk-go/plugins/ec2"
 	_ "github.com/aws/aws-xray-sdk-go/plugins/ecs"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gin-gonic/gin"
+	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
@@ -45,6 +49,22 @@ func init() {
 		LogLevel:       "info",
 		ServiceVersion: "1.0.0",
 	})
+
+	var err error
+	esClient, err = elastic.NewClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
+	if err != nil {
+		panic(err)
+	}
+
+	ses, err := session.NewSession(&aws.Config{
+		Region: aws.String(kinesisRegion),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	svc = kinesis.New(ses)
+	xray.AWS(svc.Client)
 }
 
 func Metrics(notLogged ...string) gin.HandlerFunc {

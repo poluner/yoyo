@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	log "github.com/alecthomas/log4go"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/satori/go.uuid"
 	"time"
 )
@@ -15,18 +13,6 @@ import (
 var (
 	svc *kinesis.Kinesis
 )
-
-func init() {
-	ses, err := session.NewSession(&aws.Config{
-		Region: aws.String(kinesisRegion),
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	svc = kinesis.New(ses)
-	xray.AWS(svc.Client)
-}
 
 type KEvent struct {
 	EventClass    int8                   `json:"event_class"`

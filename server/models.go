@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/olivere/elastic"
 	"strings"
 	"time"
@@ -16,15 +15,6 @@ const (
 var (
 	esClient *elastic.Client
 )
-
-func init() {
-	var err error
-
-	esClient, err = elastic.NewClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
-	if err != nil {
-		panic(err)
-	}
-}
 
 type FileItem struct {
 	Path   []string `json:"path"`
