@@ -137,9 +137,9 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 		query = query.Query(boolQuery)
 
 		hotFunction := elastic.NewFieldValueFactorFunction()
-		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(0.0).Weight(0.4)
+		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(0.0).Weight(0.1)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("collected_at")
-		collectFunction = collectFunction.Origin(time.Now()).Offset("2d").Scale("100d").Decay(0.5).Weight(0.4)
+		collectFunction = collectFunction.Origin(time.Now()).Offset("2d").Scale("100d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
 		highlight := elastic.NewHighlight().Field("name")
