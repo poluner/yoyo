@@ -48,7 +48,7 @@ func Suggest(c *gin.Context) {
 		param.Size = 10
 	}
 
-	result, err := EsSuggest(param.Text, param.Size)
+	result, err := EsSuggest(c.Request.Context(), param.Text, param.Size)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": "search failed",
@@ -83,7 +83,7 @@ func Search(c *gin.Context) {
 		param.Limit = 10
 	}
 
-	total, result, err := EsSearch(param.Text, param.Offset, param.Limit)
+	total, result, err := EsSearch(c.Request.Context(), param.Text, param.Offset, param.Limit)
 
 	// kinesis 监控
 	event := KEvent{
@@ -133,7 +133,7 @@ func UpdateMetaInfo(c *gin.Context) {
 		return
 	}
 
-	err = EsUpdateMetaData(infohash, &param)
+	err = EsUpdateMetaData(c.Request.Context(), infohash, &param)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": err,

@@ -1,9 +1,10 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/olivere/elastic"
-	"golang.org/x/net/context"
 	"strings"
 	"time"
 )
@@ -19,7 +20,7 @@ var (
 func init() {
 	var err error
 
-	esClient, err = elastic.NewClient(elastic.SetURL(EsUrls...))
+	esClient, err = elastic.NewClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
 	if err != nil {
 		panic(err)
 	}
@@ -49,13 +50,13 @@ type Torrent struct {
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
 
-func completionSuggest(text string, size int) (result []string, err error) {
+func completionSuggest(ctx context.Context, text string, size int) (result []string, err error) {
 	result = make([]string, 0, size)
 	search := esClient.Search().Index(esIndex).Type(esType)
 	suggester := elastic.NewCompletionSuggester("completion-suggest").
 		Text(text).Field("name2").SkipDuplicates(true).Size(size)
 	search = search.Suggester(suggester)
-	searchResult, err := search.Do(context.Background())
+	searchResult, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -69,13 +70,13 @@ func completionSuggest(text string, size int) (result []string, err error) {
 	return
 }
 
-func termSuggest(text string, size int) (result []string, err error) {
+func termSuggest(ctx context.Context, text string, size int) (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
 	suggester := elastic.NewTermSuggester("term-suggest").
 		Text(text).Field("name").Size(1).SuggestMode("popular")
 	search = search.Suggester(suggester)
-	searchResult, err := search.Do(context.Background())
+	searchResult, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -100,23 +101,23 @@ func termSuggest(text string, size int) (result []string, err error) {
 	return
 }
 
-func EsSuggest(text string, size int) (result []string, err error) {
+func EsSuggest(ctx context.Context, text string, size int) (result []string, err error) {
 	input := strings.TrimSpace(text)
 	if input == "" {
 		result = make([]string, 0)
 		return
 	}
 
-	result, err = completionSuggest(input, size)
+	result, err = completionSuggest(ctx, input, size)
 	if err != nil || len(result) > 0 {
 		return
 	}
 
-	result, err = termSuggest(input, size)
+	result, err = termSuggest(ctx, input, size)
 	return
 }
 
-func EsSearch(text string, offset int, limit int) (total int64, result []Torrent, err error) {
+func EsSearch(ctx context.Context, text string, offset int, limit int) (total int64, result []Torrent, err error) {
 	result = make([]Torrent, 0, limit)
 	if offset+limit > maxResultWindow {
 		return
@@ -149,7 +150,7 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 	}
 
 	search = search.From(offset).Size(limit)
-	res, err := search.Do(context.Background())
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -183,8 +184,7 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 	return
 }
 
-func EsUpdateMetaData(infohash string, meta *updatePost) (err error) {
-	ctx := context.Background()
+func EsUpdateMetaData(ctx context.Context, infohash string, meta *updatePost) (err error) {
 	_, err = esClient.Get().Index(esIndex).Type(esType).Id(infohash).Do(ctx)
 
 	item := EsTorrent{}

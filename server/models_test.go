@@ -1,12 +1,13 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
 
 func TestEsSuggest(t *testing.T) {
-	result, err := EsSuggest("fosage", 2)
+	result, err := EsSuggest(context.Background(), "fosage", 2)
 	if err != nil {
 		t.Fail()
 	}
@@ -15,7 +16,7 @@ func TestEsSuggest(t *testing.T) {
 }
 
 func TestEsSearch(t *testing.T) {
-	total, result, err := EsSearch("batman", 0, 1)
+	total, result, err := EsSearch(context.Background(), "batman", 0, 1)
 	if err != nil {
 		t.Fail()
 	}
@@ -28,7 +29,7 @@ func TestEsUpdateMetaData(t *testing.T) {
 	meta := updatePost{
 		Hot: 110,
 	}
-	err := EsUpdateMetaData("111111", &meta)
+	err := EsUpdateMetaData(context.Background(), "111111", &meta)
 	if err != nil {
 		t.Fail()
 	}
