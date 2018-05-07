@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	log "github.com/alecthomas/log4go"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
@@ -47,10 +48,11 @@ func (e *KEvent) Push(ctx context.Context) (err error) {
 		return
 	}
 
-	_, err = svc.PutRecordWithContext(ctx, &kinesis.PutRecordInput{
+	result, err := svc.PutRecordWithContext(ctx, &kinesis.PutRecordInput{
 		Data:         bytePostData,
 		StreamName:   aws.String(kinesisStream),
 		PartitionKey: aws.String(id.String()),
 	})
+	log.Info("kinesis: %+v, %v", result, err)
 	return
 }
