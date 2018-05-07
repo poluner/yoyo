@@ -51,7 +51,7 @@ func init() {
 	})
 
 	var err error
-	esClient, err = elastic.NewClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
+	esClient, err = elastic.NewSimpleClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
 	if err != nil {
 		panic(err)
 	}

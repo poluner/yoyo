@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/olivere/elastic"
 	"strings"
 	"time"
@@ -92,6 +93,9 @@ func termSuggest(ctx context.Context, text string, size int) (result []string, e
 }
 
 func EsSuggest(ctx context.Context, text string, size int) (result []string, err error) {
+	_, seg := xray.BeginSubsegment(ctx, "es-suggest")
+	defer seg.Close(err)
+
 	input := strings.TrimSpace(text)
 	if input == "" {
 		result = make([]string, 0)
@@ -108,6 +112,9 @@ func EsSuggest(ctx context.Context, text string, size int) (result []string, err
 }
 
 func EsSearch(ctx context.Context, text string, offset int, limit int) (total int64, result []Torrent, err error) {
+	_, seg := xray.BeginSubsegment(ctx, "es-search")
+	defer seg.Close(err)
+
 	result = make([]Torrent, 0, limit)
 	if offset+limit > maxResultWindow {
 		return
@@ -175,6 +182,9 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 }
 
 func EsUpdateMetaData(ctx context.Context, infohash string, meta *updatePost) (err error) {
+	_, seg := xray.BeginSubsegment(ctx, "es-update")
+	defer seg.Close(err)
+
 	_, err = esClient.Get().Index(esIndex).Type(esType).Id(infohash).Do(ctx)
 
 	item := EsTorrent{}
