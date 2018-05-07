@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type suggestParam struct {
@@ -83,6 +84,25 @@ func Search(c *gin.Context) {
 	}
 
 	total, result, err := EsSearch(param.Text, param.Offset, param.Limit)
+
+	// kinesis 监控
+	event := KEvent{
+		EventClass: 1,
+		EventName:  "bt_search",
+		Attributes: []string{"search", "torrent"},
+		ExtData: map[string]interface{}{
+			"text":    param.Text,
+			"offset":  param.Offset,
+			"limit":   param.Limit,
+			"total":   total,
+			"length":  len(result),
+			"version": 1,
+		},
+		RequestHeader: c.Request.Header,
+		CreateTime:    time.Now(),
+	}
+	event.Push(c.Request.Context())
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": "search failed",

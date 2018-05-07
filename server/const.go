@@ -11,6 +11,8 @@ const (
 	paramsInvalid = 200
 
 	xrayDaemonAddress = "127.0.0.1:3000"
+	kinesisRegion     = "ap-south-1"
+	kinesisStream     = "SeverReportProduct"
 )
 
 var (
