@@ -142,22 +142,6 @@ func finishTask(infohash string, bt *BitTorrent) {
 	}
 }
 
-func addGetPeerTask(infoStr string) {
-	infoHash := hex.EncodeToString([]byte(infoStr))
-	tx := dbConnection.Begin()
-	var task InfohashTask
-	if tx.Where("infohash = ?", infoHash).Find(&task).RecordNotFound() {
-		task.Infohash = infoHash
-		if tx.Create(&task).Error != nil {
-			tx.Rollback()
-			log.Error("addGetPeerTask %s insert infohash_task failed", infoHash)
-			return
-		}
-	}
-	tx.Commit()
-	return
-}
-
 func addAnnouncePeerTask(infoStr string, address string) (finished bool) {
 	infohash := hex.EncodeToString([]byte(infoStr))
 	tx := dbConnection.Begin()
@@ -214,9 +198,6 @@ func main() {
 		if !addAnnouncePeerTask(infoHash, address) {
 			wire.Request([]byte(infoHash), ip, port)
 		}
-	}
-	config.OnGetPeers = func(infoHash, ip string, port int) {
-		addGetPeerTask(infoHash)
 	}
 	d := dht.New(config)
 

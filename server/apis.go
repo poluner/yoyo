@@ -99,13 +99,6 @@ func Search(c *gin.Context) {
 	})
 }
 
-func UpdateDownloadCount(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"result": "ok",
-		"code":   noError,
-	})
-}
-
 func UpdateMetaInfo(c *gin.Context) {
 	infohash := c.Param("infohash")
 

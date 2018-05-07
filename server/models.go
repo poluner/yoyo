@@ -174,7 +174,7 @@ func EsSearch(text string, offset int, limit int) (total int64, result []Torrent
 			Highlight:   hit.Highlight,
 		}
 		for _, f := range item.Files {
-			if !strings.HasPrefix(f.Path[0], "_____padding_file") {
+			if !strings.HasPrefix(f.Path[0], "_____") {
 				t.Files = append(t.Files, f)
 			}
 		}
@@ -196,6 +196,12 @@ func EsUpdateMetaData(infohash string, meta *updatePost) (err error) {
 			item.Files = meta.Meta.Files
 			item.Download = meta.Hot
 			item.CollectedAt = time.Now()
+
+			for _, fileItem := range meta.Meta.Files {
+				if !strings.HasPrefix(fileItem.Path[0], "_____") {
+					item.Files = append(item.Files, fileItem)
+				}
+			}
 
 			var total int
 			for _, file := range meta.Meta.Files {

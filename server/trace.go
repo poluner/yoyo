@@ -1,14 +1,19 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	log "github.com/alecthomas/log4go"
+	"github.com/aws/aws-xray-sdk-go/header"
+	_ "github.com/aws/aws-xray-sdk-go/plugins/beanstalk"
+	_ "github.com/aws/aws-xray-sdk-go/plugins/ec2"
+	_ "github.com/aws/aws-xray-sdk-go/plugins/ecs"
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -26,12 +31,20 @@ var (
 		Name:    fmt.Sprintf("%s_response_latency_millisecond", ProjectName),
 		Help:    "Response latency (millisecond)",
 		Buckets: historyBuckets[:]}, []string{"method", "endpoint"})
+
+	sn = xray.NewFixedSegmentNamer(ProjectName)
 )
 
 func init() {
 	prometheus.MustRegister(ResponseCounter)
 	prometheus.MustRegister(ErrorCounter)
 	prometheus.MustRegister(ResponseLatency)
+
+	xray.Configure(xray.Config{
+		DaemonAddr:     xrayDaemonAddress,
+		LogLevel:       "info",
+		ServiceVersion: "1.0.0",
+	})
 }
 
 func Metrics(notLogged ...string) gin.HandlerFunc {
@@ -46,28 +59,74 @@ func Metrics(notLogged ...string) gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		// Start timer
-		start := time.Now()
-		path := c.Request.URL.Path
-		if strings.HasSuffix(path, "download") {
-			path = fmt.Sprintf("/%s/:infohash/download", ProjectName)
-		} else if strings.HasSuffix(path, "update") {
-			path = fmt.Sprintf("/%s/:infohash/update", ProjectName)
-		}
+		r := c.Request
+		path := r.URL.Path
+		if _, ok := skip[path]; ok {
+			// Process request
+			c.Next()
+		} else {
+			// Start timer
+			start := time.Now()
 
-		// Process request
-		c.Next()
+			// xray http trace before operation
+			name := sn.Name(c.Request.Host)
+			traceHeader := header.FromString(r.Header.Get("x-amzn-trace-id"))
+			ctx, seg := xray.NewSegmentFromHeader(r.Context(), name, traceHeader)
+			r = r.WithContext(ctx)
+			c.Request = r
+			seg.Lock()
 
-		// Log only when path is not being skipped
-		if _, ok := skip[path]; !ok {
-			// Stop timer
-			end := time.Now()
-			latency := end.Sub(start)
+			scheme := "https://"
+			if r.TLS == nil {
+				scheme = "http://"
+			}
+			seg.GetHTTP().GetRequest().Method = r.Method
+			seg.GetHTTP().GetRequest().URL = scheme + r.Host + r.URL.Path
+			seg.GetHTTP().GetRequest().ClientIP, seg.GetHTTP().GetRequest().XForwardedFor = clientIP(r)
+			seg.GetHTTP().GetRequest().UserAgent = r.UserAgent()
+
+			var respHeader bytes.Buffer
+			respHeader.WriteString("Root=")
+			respHeader.WriteString(seg.TraceID)
+
+			if traceHeader.SamplingDecision != header.Sampled && traceHeader.SamplingDecision != header.NotSampled {
+				seg.Sampled = seg.ParentSegment.GetConfiguration().SamplingStrategy.ShouldTrace(r.Host, r.URL.Path, r.Method)
+			}
+			if traceHeader.SamplingDecision == header.Requested {
+				respHeader.WriteString(";Sampled=")
+				respHeader.WriteString(strconv.Itoa(btoi(seg.Sampled)))
+			}
+
+			c.Writer.Header().Set("x-amzn-trace-id", respHeader.String())
+			seg.Unlock()
+
+			// Process request
+			c.Next()
 
 			clientIP := c.ClientIP()
 			method := c.Request.Method
 			statusCode := c.Writer.Status()
 			comment := c.Errors.ByType(gin.ErrorTypePrivate).String()
+
+			seg.Lock()
+			seg.GetHTTP().GetResponse().Status = c.Writer.Status()
+			seg.GetHTTP().GetResponse().ContentLength, _ = strconv.Atoi(c.Writer.Header().Get("Content-Length"))
+
+			if statusCode >= 400 && statusCode < 500 {
+				seg.Error = true
+			}
+			if statusCode == 429 {
+				seg.Throttle = true
+			}
+			if statusCode >= 500 && statusCode < 600 {
+				seg.Fault = true
+			}
+			seg.Unlock()
+			seg.Close(nil)
+
+			// Stop timer
+			end := time.Now()
+			latency := end.Sub(start)
 
 			log.Info("%3d | %13v | %-15s | %-7s %s %s",
 				statusCode,

@@ -26,6 +26,7 @@ func Recovery() gin.HandlerFunc {
 				endPoint := c.Request.URL.Path
 				stack := stack(3)
 				httpRequest, _ := httputil.DumpRequest(c.Request, true)
+				log.Error(err)
 				log.Error("%s\n%s", string(httpRequest), string(stack))
 
 				ErrorCounter.WithLabelValues(c.Request.Method, endPoint).Inc()

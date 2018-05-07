@@ -9,6 +9,8 @@ const (
 	noError       = 0
 	internalErr   = 100
 	paramsInvalid = 200
+
+	xrayDaemonAddress = "127.0.0.1:3000"
 )
 
 var (
