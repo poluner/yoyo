@@ -138,7 +138,7 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 		query = query.Query(boolQuery)
 
 		hotFunction := elastic.NewFieldValueFactorFunction()
-		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(0.8).Weight(0.1)
+		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(1).Weight(0.1)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("collected_at")
 		collectFunction = collectFunction.Origin(time.Now()).Offset("20d").Scale("200d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
@@ -146,7 +146,6 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
-		search = search.MinScore(1.0)
 	}
 
 	search = search.From(offset).Size(limit)
