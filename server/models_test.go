@@ -27,9 +27,10 @@ func TestEsSearch(t *testing.T) {
 
 func TestEsUpdateMetaData(t *testing.T) {
 	meta := updatePost{
-		Hot: 110,
+		Hot:      110,
+		Infohash: "11111",
 	}
-	err := EsUpdateMetaData(context.Background(), "111111", &meta)
+	err := EsUpdateMetaData(context.Background(), &meta)
 	if err != nil {
 		t.Fail()
 	}

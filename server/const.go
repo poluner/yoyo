@@ -3,7 +3,7 @@ package server
 const (
 	ProjectName = "yoyo"
 
-	esIndex = "torrent"
+	esIndex = "resources"
 	esType  = "doc"
 
 	noError       = 0
@@ -16,5 +16,5 @@ const (
 )
 
 var (
-	EsUrls = []string{"http://172.31.23.5:9200", "http://172.31.23.5:9201", "http://172.31.10.234:9200"}
+	EsUrls = []string{"https://search-xles03-xw27kvqlra4onvljuqbbemmb4q.ap-south-1.es.amazonaws.com"}
 )

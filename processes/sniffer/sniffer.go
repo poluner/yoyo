@@ -31,8 +31,9 @@ type BitTorrent struct {
 }
 
 type updatePost struct {
-	Meta BitTorrent `json:"info"`
-	Hot  int        `json:"hot"`
+	Meta     BitTorrent `json:"info"`
+	Hot      int        `json:"hot"`
+	Infohash string     `json:"infohash"`
 }
 
 type InfohashTask struct {
@@ -58,13 +59,13 @@ func (AnnouncePeer) TableName() string {
 	return "announce_peer"
 }
 
-func updateEs(infohash string, bt *updatePost) (err error) {
+func updateEs(bt *updatePost) (err error) {
 	postValue, err := json.Marshal(bt)
 	if err != nil {
 		return
 	}
 
-	url := fmt.Sprintf("http://api.watchnow.n0909.com/yoyo/%s/update", infohash)
+	url := "http://api.watchnow.n0909.com/yoyo/update"
 	log.Info("%s %s", url, postValue)
 	_, err = httpClient.Post(url, "application/json", bytes.NewBuffer(postValue))
 	return
@@ -135,10 +136,11 @@ func finishTask(infohash string, bt *BitTorrent) {
 	dbConnection.Table("announce_peer").Where("infohash = ?", infohash).Count(&total)
 	if total > 0 {
 		param := updatePost{
-			Hot:  total,
-			Meta: *bt,
+			Hot:      total,
+			Meta:     *bt,
+			Infohash: infohash,
 		}
-		updateEs(infohash, &param)
+		updateEs(&param)
 	}
 }
 
@@ -183,9 +185,10 @@ func addAnnouncePeerTask(infoStr string, address string) (finished bool) {
 
 		if total > 0 {
 			param := updatePost{
-				Hot: total,
+				Hot:      total,
+				Infohash: infohash,
 			}
-			updateEs(infohash, &param)
+			updateEs(&param)
 		}
 	}
 	return

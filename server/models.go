@@ -44,9 +44,10 @@ type Torrent struct {
 func completionSuggest(ctx context.Context, text string, size int) (result []string, err error) {
 	result = make([]string, 0, size)
 	search := esClient.Search().Index(esIndex).Type(esType)
+	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "torrent"))
 	suggester := elastic.NewCompletionSuggester("completion-suggest").
 		Text(text).Field("name2").SkipDuplicates(true).Size(size)
-	search = search.Suggester(suggester)
+	search = search.Query(query).Suggester(suggester)
 	searchResult, err := search.Do(ctx)
 	if err != nil {
 		return
@@ -64,9 +65,10 @@ func completionSuggest(ctx context.Context, text string, size int) (result []str
 func termSuggest(ctx context.Context, text string, size int) (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
+	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "torrent"))
 	suggester := elastic.NewTermSuggester("term-suggest").
 		Text(text).Field("name").Size(1).SuggestMode("popular")
-	search = search.Suggester(suggester)
+	search = search.Query(query).Suggester(suggester)
 	searchResult, err := search.Do(ctx)
 	if err != nil {
 		return
@@ -123,13 +125,14 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 	input := strings.TrimSpace(text)
 	search := esClient.Search().Index(esIndex).Type(esType)
 	if input == "" {
-		query := elastic.NewMatchAllQuery()
+		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "torrent"))
 		search = search.Query(query)
 	} else {
 		boolQuery := elastic.NewBoolQuery()
-		nameQuery := elastic.NewMatchQuery("name", input).Boost(5.0)
-		pathQuery := elastic.NewMatchQuery("files.path", input).Boost(1.0)
-		boolQuery = boolQuery.Should(nameQuery, pathQuery)
+		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "torrent"))
+		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
+			elastic.NewMatchQuery("name", input).Boost(5.0),
+			elastic.NewMatchQuery("files.path", input).Boost(1.0)))
 
 		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
 		query = query.Query(boolQuery)
@@ -181,11 +184,11 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 	return
 }
 
-func EsUpdateMetaData(ctx context.Context, infohash string, meta *updatePost) (err error) {
+func EsUpdateMetaData(ctx context.Context, meta *updatePost) (err error) {
 	_, seg := xray.BeginSubsegment(ctx, "es-update")
 	defer seg.Close(err)
 
-	_, err = esClient.Get().Index(esIndex).Type(esType).Id(infohash).Do(ctx)
+	_, err = esClient.Get().Index(esIndex).Type(esType).Id(meta.Infohash).Do(ctx)
 
 	item := EsTorrent{}
 	if err != nil {
@@ -214,7 +217,7 @@ func EsUpdateMetaData(ctx context.Context, infohash string, meta *updatePost) (e
 			}
 
 			_, err = esClient.Index().Index(esIndex).Type(
-				esType).Id(infohash).BodyJson(item).Do(ctx)
+				esType).Id(meta.Infohash).BodyJson(item).Do(ctx)
 		}
 	} else {
 		// found
@@ -225,7 +228,7 @@ func EsUpdateMetaData(ctx context.Context, infohash string, meta *updatePost) (e
 					"collected_at": time.Now(),
 				},
 			)
-			_, err = esClient.Update().Index(esIndex).Type(esType).Id(infohash).Script(script).Do(ctx)
+			_, err = esClient.Update().Index(esIndex).Type(esType).Id(meta.Infohash).Script(script).Do(ctx)
 		}
 	}
 
