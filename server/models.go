@@ -131,8 +131,8 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "torrent"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(5.0),
-			elastic.NewMatchQuery("files.path", input).Boost(1.0)))
+			elastic.NewMatchQuery("name", input).Boost(5.0)))
+		//elastic.NewMatchQuery("files.path", input).Boost(1.0)))
 
 		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
 		query = query.Query(boolQuery)
