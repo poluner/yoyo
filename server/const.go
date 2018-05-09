@@ -3,7 +3,7 @@ package server
 const (
 	ProjectName = "yoyo"
 
-	esIndex = "resource"
+	esIndex = "resources"
 	esType  = "doc"
 
 	noError       = 0
