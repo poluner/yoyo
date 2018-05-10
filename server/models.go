@@ -7,6 +7,7 @@ import (
 	"github.com/olivere/elastic"
 	"strings"
 	"time"
+	log "github.com/alecthomas/log4go"
 )
 
 const (
@@ -216,6 +217,8 @@ func EsUpdateMetaData(ctx context.Context, meta *updatePost) (err error) {
 
 			_, err = esClient.Index().Index(esIndex).Type(
 				esType).Id(meta.Infohash).BodyJson(item).Do(ctx)
+			log.Info("%+v", item)
+			log.Error(err)
 		}
 	} else {
 		// found
