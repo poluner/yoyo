@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 )
 
 var (
@@ -44,13 +45,18 @@ func init() {
 	prometheus.MustRegister(ErrorCounter)
 	prometheus.MustRegister(ResponseLatency)
 
+	var err error
+	ss, err := sampling.NewLocalizedStrategyFromFilePath(samplePath)
+	if err != nil {
+		panic(err)
+	}
+
 	xray.Configure(xray.Config{
 		DaemonAddr:     xrayDaemonAddress,
 		LogLevel:       "info",
-		ServiceVersion: "1.0.0",
+		SamplingStrategy: ss,
 	})
 
-	var err error
 	esClient, err = elastic.NewSimpleClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
 	if err != nil {
 		panic(err)

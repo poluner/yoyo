@@ -2,6 +2,7 @@ package server
 
 const (
 	ProjectName = "yoyo"
+	samplePath  = "sample.json"
 
 	esIndex = "resources"
 	esType  = "doc"
