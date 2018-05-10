@@ -84,9 +84,7 @@ func termSuggest(ctx context.Context, text string, size int) (result []string, e
 			break
 		}
 
-		if suggest.Options == nil || len(suggest.Options) == 0 {
-			result = append(result, suggest.Text)
-		} else {
+		if suggest.Options != nil && len(suggest.Options) > 0 {
 			result = append(result, suggest.Options[0].Text)
 		}
 	}
