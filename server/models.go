@@ -192,6 +192,7 @@ func EsUpdateMetaData(ctx context.Context, meta *updatePost) (err error) {
 	item := EsTorrent{}
 	if err != nil {
 		// not found
+		err = nil
 		if meta.Meta.Name != "" {
 			item.Name = meta.Meta.Name
 			item.Name2 = item.Name
