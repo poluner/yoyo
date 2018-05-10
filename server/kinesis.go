@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 	"github.com/satori/go.uuid"
+	"net/http"
 	"time"
 )
 
@@ -15,12 +16,12 @@ var (
 )
 
 type KEvent struct {
-	EventClass    int8                   `json:"event_class"`
-	EventName     string                 `json:"event_name"`
-	Attributes    []string               `json:"attributes"`
-	ExtData       map[string]interface{} `json:"ext_data"`
-	RequestHeader interface{}            `json:"request_header"`
-	CreateTime    time.Time              `json:"create_time"`
+	EventClass    int8              `json:"event_class"`
+	EventName     string            `json:"event_name"`
+	Attributes    []string          `json:"attributes"`
+	ExtData       map[string]string `json:"ext_data"`
+	RequestHeader http.Header       `json:"request_header"`
+	CreateTime    time.Time         `json:"create_time"`
 }
 
 func (e *KEvent) Push(ctx context.Context) (err error) {

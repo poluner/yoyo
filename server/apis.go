@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -91,13 +92,13 @@ func Search(c *gin.Context) {
 		EventClass: 1,
 		EventName:  "bt_search",
 		Attributes: []string{"search", "torrent"},
-		ExtData: map[string]interface{}{
+		ExtData: map[string]string{
 			"text":    param.Text,
-			"offset":  param.Offset,
-			"limit":   param.Limit,
-			"total":   total,
-			"length":  len(result),
-			"version": 1,
+			"offset":  strconv.Itoa(param.Offset),
+			"limit":   strconv.Itoa(param.Limit),
+			"total":   strconv.Itoa(int(total)),
+			"length":  strconv.Itoa(len(result)),
+			"version": "1.0",
 		},
 		RequestHeader: c.Request.Header,
 		CreateTime:    time.Now(),
