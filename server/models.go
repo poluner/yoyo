@@ -80,7 +80,7 @@ func termSuggest(ctx context.Context, text string, size int) (result []string, e
 	}
 
 	for _, suggest := range suggestResult {
-		if len(result) > size {
+		if len(result) >= size {
 			break
 		}
 
