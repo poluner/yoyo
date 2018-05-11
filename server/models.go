@@ -26,6 +26,7 @@ type FileItem struct {
 type EsTorrent struct {
 	Name        string     `json:"name"`
 	Name2       string     `json:"name2"`
+	Type        string     `json:"type,omitempty"`
 	Download    int        `json:"hot"`
 	Length      int        `json:"length"`
 	CollectedAt time.Time  `json:"collected_at"`
@@ -113,8 +114,8 @@ func EsSuggest(ctx context.Context, text string, size int) (result []string, err
 }
 
 func EsSearch(ctx context.Context, text string, offset int, limit int) (total int64, result []Torrent, err error) {
-	_, seg := xray.BeginSubsegment(ctx, "es-search")
-	defer seg.Close(err)
+	//_, seg := xray.BeginSubsegment(ctx, "es-search")
+	//defer seg.Close(err)
 
 	result = make([]Torrent, 0, limit)
 	if offset+limit > maxResultWindow {
@@ -130,7 +131,7 @@ func EsSearch(ctx context.Context, text string, offset int, limit int) (total in
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "torrent"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(5.0)))
+			elastic.NewMatchQuery("name", input).Boost(1.0)))
 		//elastic.NewMatchQuery("files.path", input).Boost(1.0)))
 
 		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
@@ -198,6 +199,7 @@ func EsUpdateMetaData(ctx context.Context, meta *updatePost) (err error) {
 			item.Files = meta.Meta.Files
 			item.Download = meta.Hot
 			item.CollectedAt = time.Now()
+			item.Type = "torrent"
 
 			for _, fileItem := range meta.Meta.Files {
 				if !strings.HasPrefix(fileItem.Path[0], "_____") {
