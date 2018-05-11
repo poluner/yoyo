@@ -114,8 +114,8 @@ func EsSuggest(ctx context.Context, text string, size int) (result []string, err
 }
 
 func EsSearch(ctx context.Context, text string, offset int, limit int) (total int64, result []Torrent, err error) {
-	//_, seg := xray.BeginSubsegment(ctx, "es-search")
-	//defer seg.Close(err)
+	_, seg := xray.BeginSubsegment(ctx, "es-search")
+	defer seg.Close(err)
 
 	result = make([]Torrent, 0, limit)
 	if offset+limit > maxResultWindow {
@@ -219,8 +219,8 @@ func EsUpdateMetaData(ctx context.Context, meta *updatePost) (err error) {
 
 			_, err = esClient.Index().Index(esIndex).Type(
 				esType).Id(meta.Infohash).BodyJson(item).Do(ctx)
+			log.Info(meta.Infohash)
 			log.Info("%+v", item)
-			log.Error(err)
 		}
 	} else {
 		// found
