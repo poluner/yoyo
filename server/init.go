@@ -37,7 +37,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	dbConn.LogMode(true)
+	dbConn.LogMode(false)
 
 	esClient, err = elastic.NewSimpleClient(elastic.SetURL(esUrl), elastic.SetHttpClient(xray.Client(nil)))
 	if err != nil {

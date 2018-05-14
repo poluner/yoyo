@@ -25,8 +25,8 @@ func (IMDBTorrent) TableName() string {
 type IMDBYoutube struct {
 	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
 	FilmId    string    `gorm:"column:film_id;type:varchar(20)"`
-	VideoName string    `gorm:"column:infohash;type:varchar(300)"`
-	PlayUrl   string    `gorm:"column:bt_name;type:varchar(100)"`
+	VideoName string    `gorm:"column:video_name;type:varchar(300)"`
+	PlayUrl   string    `gorm:"column:play_url;type:varchar(100)"`
 	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
 }
 
@@ -45,8 +45,8 @@ type YoutubeItem struct {
 	PlayUrl  string `json:"play_url"`
 }
 
-func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]TorrentItem, err error) {
-	btMap = make(map[string][]TorrentItem)
+func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]*TorrentItem, err error) {
+	btMap = make(map[string][]*TorrentItem)
 	if filmIds == nil || len(filmIds) == 0 {
 		return
 	}
@@ -60,10 +60,10 @@ func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]Tor
 	for _, record := range records {
 		torrents, ok := btMap[record.FilmId]
 		if !ok {
-			torrents = make([]TorrentItem, 0, 5)
+			torrents = make([]*TorrentItem, 0, 5)
 		}
 
-		torrents = append(torrents, TorrentItem{
+		torrents = append(torrents, &TorrentItem{
 			Name: record.BtName,
 			InfoHash: record.InfoHash,
 			Length: record.Length,
@@ -73,8 +73,8 @@ func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]Tor
 	return
 }
 
-func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string][]YoutubeItem, err error) {
-	youtubeMap = make(map[string][]YoutubeItem)
+func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string][]*YoutubeItem, err error) {
+	youtubeMap = make(map[string][]*YoutubeItem)
 	if filmIds == nil || len(filmIds) == 0 {
 		return
 	}
@@ -88,10 +88,10 @@ func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string]
 	for _, record := range records {
 		videos, ok := youtubeMap[record.FilmId]
 		if !ok {
-			videos = make([]YoutubeItem, 0, 5)
+			videos = make([]*YoutubeItem, 0, 5)
 		}
 
-		videos = append(videos, YoutubeItem{
+		videos = append(videos, &YoutubeItem{
 			Name: record.VideoName,
 			PlayUrl: record.PlayUrl,
 		})
