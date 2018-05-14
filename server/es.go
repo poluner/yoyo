@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 	log "github.com/alecthomas/log4go"
-	"fmt"
 )
 
 var esClient *elastic.Client
@@ -57,6 +56,8 @@ type Movie struct {
 	Runtime    int                  `json:"runtime,omitempty"`
 	Release    string               `json:"release,omitempty"`
 
+	Highlight   map[string][]string `json:"highlight,omitempty"`
+
 	Youtube    []YoutubeItem        `json:"youtube,omitempty"`
 	BT         []TorrentItem        `json:"bt,omitempty"`
 }
@@ -69,6 +70,8 @@ type MV struct {
 	Genre      []string             `json:"genre,omitempty"`
 	Runtime    int                  `json:"runtime,omitempty"`
 	Hot        int                  `json:"hot,omitempty"`
+
+	Highlight  map[string][]string `json:"highlight,omitempty"`
 }
 
 func (p *suggestParam) completionSuggest() (result []string, err error) {
@@ -297,10 +300,10 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 		hotFunction := elastic.NewFieldValueFactorFunction()
 		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(1).Weight(0.5)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("release")
-		collectFunction = collectFunction.Origin(time.Now()).Offset("30d").Scale("50y").Decay(0.5).Weight(0.1)
+		collectFunction = collectFunction.Origin(time.Now()).Offset("30d").Scale("10000d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
-		highlight := elastic.NewHighlight().Field("name").Field("alias").Field("description")
+		highlight := elastic.NewHighlight().Field("name").Field("description")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
 	}
@@ -322,6 +325,8 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 		if err != nil {
 			continue
 		}
+
+		item.Highlight = hit.Highlight
 
 		filmIds = append(filmIds, item.Id)
 		result = append(result, item)
@@ -378,6 +383,7 @@ func (p *searchParam) SearchMV() (total int64, result []MV, err error) {
 			continue
 		}
 
+		item.Highlight = hit.Highlight
 		result = append(result, item)
 	}
 
