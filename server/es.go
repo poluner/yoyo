@@ -199,11 +199,11 @@ func (p *updateParam)UpdateTorrent() (err error) {
 	return
 }
 
-func (p *searchParam) SearchBT() (total int64, result []Torrent, err error) {
+func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "torrent-search")
 	defer seg.Close(err)
 
-	result = make([]Torrent, 0, p.Limit)
+	result = make([]*Torrent, 0, p.Limit)
 	if p.Offset + p.Limit > maxResultWindow {
 		return
 	}
@@ -264,17 +264,17 @@ func (p *searchParam) SearchBT() (total int64, result []Torrent, err error) {
 				t.Files = append(t.Files, f)
 			}
 		}
-		result = append(result, t)
+		result = append(result, &t)
 	}
 	return
 }
 
 
-func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
+func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-search")
 	defer seg.Close(err)
 
-	result = make([]Movie, 0, p.Limit)
+	result = make([]*Movie, 0, p.Limit)
 	if p.Offset + p.Limit > maxResultWindow {
 		return
 	}
@@ -288,11 +288,10 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(5.0),
-			elastic.NewMatchQuery("alias", input).Boost(5.0),
-			elastic.NewMatchQuery("actor", input).Boost(3.0),
-			elastic.NewMatchQuery("director", input).Boost(3.0),
-			elastic.NewMatchQuery("description", input).Boost(1.0),))
+			elastic.NewMatchQuery("name", input).Boost(2.0),
+			elastic.NewMatchQuery("alias", input).Boost(2.0),
+			elastic.NewMatchQuery("actor", input).Boost(1.0),
+			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
 		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
 		query = query.Query(boolQuery)
@@ -303,7 +302,7 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 		collectFunction = collectFunction.Origin(time.Now()).Offset("120d").Scale("36500d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
-		highlight := elastic.NewHighlight().Field("name").Field("description")
+		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
 	}
@@ -329,7 +328,7 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 		item.Highlight = hit.Highlight
 
 		filmIds = append(filmIds, item.Id)
-		result = append(result, item)
+		result = append(result, &item)
 	}
 
 	btMap, _ := QueryTorrent(p.ctx, filmIds)
@@ -341,11 +340,11 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 	return
 }
 
-func (p *searchParam) SearchMV() (total int64, result []MV, err error) {
+func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "mv-search")
 	defer seg.Close(err)
 
-	result = make([]MV, 0, p.Limit)
+	result = make([]*MV, 0, p.Limit)
 	if p.Offset + p.Limit > maxResultWindow {
 		return
 	}
@@ -384,7 +383,7 @@ func (p *searchParam) SearchMV() (total int64, result []MV, err error) {
 		}
 
 		item.Highlight = hit.Highlight
-		result = append(result, item)
+		result = append(result, &item)
 	}
 
 	return
