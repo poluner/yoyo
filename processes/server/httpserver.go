@@ -45,8 +45,10 @@ func main() {
 	router.GET(metricPath, server.GetMetrics)
 
 	router.GET("/yoyo/suggest", server.Suggest)
-	router.GET("/yoyo/search", server.Search)
-	router.POST("/yoyo/update", server.UpdateMetaInfo)
+	router.GET("/yoyo/search", server.SearchBT)
+	router.POST("/yoyo/update", server.UpdateBTMetaInfo)
+	router.GET("/yoyo/movie/search", server.SearchMovie)
+	router.GET("/yoyo/mv/search", server.SearchMV)
 
 	endless.ListenAndServe(address, router)
 	os.Exit(0)

@@ -1,25 +1,17 @@
 package server
 
 import (
+	"time"
 	"bytes"
 	"fmt"
-	log "github.com/alecthomas/log4go"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	"github.com/aws/aws-xray-sdk-go/header"
-	_ "github.com/aws/aws-xray-sdk-go/plugins/beanstalk"
-	_ "github.com/aws/aws-xray-sdk-go/plugins/ec2"
-	_ "github.com/aws/aws-xray-sdk-go/plugins/ecs"
-	"github.com/aws/aws-xray-sdk-go/xray"
+	"strconv"
+	"net/http"
 	"github.com/gin-gonic/gin"
-	"github.com/olivere/elastic"
+	log "github.com/alecthomas/log4go"
+	"github.com/aws/aws-xray-sdk-go/header"
+	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
-	"strconv"
-	"time"
-	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 )
 
 var (
@@ -40,38 +32,6 @@ var (
 	sn = xray.NewFixedSegmentNamer(ProjectName)
 )
 
-func init() {
-	prometheus.MustRegister(ResponseCounter)
-	prometheus.MustRegister(ErrorCounter)
-	prometheus.MustRegister(ResponseLatency)
-
-	var err error
-	ss, err := sampling.NewLocalizedStrategyFromFilePath(samplePath)
-	if err != nil {
-		panic(err)
-	}
-
-	xray.Configure(xray.Config{
-		DaemonAddr:     xrayDaemonAddress,
-		LogLevel:       "info",
-		SamplingStrategy: ss,
-	})
-
-	esClient, err = elastic.NewSimpleClient(elastic.SetURL(EsUrls...), elastic.SetHttpClient(xray.Client(nil)))
-	if err != nil {
-		panic(err)
-	}
-
-	ses, err := session.NewSession(&aws.Config{
-		Region: aws.String(kinesisRegion),
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	svc = kinesis.New(ses)
-	xray.AWS(svc.Client)
-}
 
 func Metrics(notLogged ...string) gin.HandlerFunc {
 	var skip map[string]struct{}
