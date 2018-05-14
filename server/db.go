@@ -86,16 +86,16 @@ func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string]
 	}
 
 	for _, record := range records {
-		torrents, ok := youtubeMap[record.FilmId]
+		videos, ok := youtubeMap[record.FilmId]
 		if !ok {
-			torrents = make([]YoutubeItem, 0, 5)
+			videos = make([]YoutubeItem, 0, 5)
 		}
 
-		torrents = append(torrents, YoutubeItem{
+		videos = append(videos, YoutubeItem{
 			Name: record.VideoName,
 			PlayUrl: record.PlayUrl,
 		})
-		youtubeMap[record.FilmId] = torrents
+		youtubeMap[record.FilmId] = videos
 	}
 	return
 }

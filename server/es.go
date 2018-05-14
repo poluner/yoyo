@@ -226,7 +226,7 @@ func (p *searchParam) SearchBT() (total int64, result []Torrent, err error) {
 		hotFunction := elastic.NewFieldValueFactorFunction()
 		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(1).Weight(0.1)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("collected_at")
-		collectFunction = collectFunction.Origin(time.Now()).Offset("20d").Scale("200d").Decay(0.5).Weight(0.1)
+		collectFunction = collectFunction.Origin(time.Now()).Offset("30d").Scale("365d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
 		highlight := elastic.NewHighlight().Field("name")
@@ -300,7 +300,7 @@ func (p *searchParam) SearchMovie() (total int64, result []Movie, err error) {
 		hotFunction := elastic.NewFieldValueFactorFunction()
 		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(1).Weight(0.5)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("release")
-		collectFunction = collectFunction.Origin(time.Now()).Offset("30d").Scale("10000d").Decay(0.5).Weight(0.1)
+		collectFunction = collectFunction.Origin(time.Now()).Offset("120d").Scale("36500d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
 		highlight := elastic.NewHighlight().Field("name").Field("description")
