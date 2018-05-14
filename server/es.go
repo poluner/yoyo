@@ -77,10 +77,9 @@ type MV struct {
 func (p *suggestParam) completionSuggest() (result []string, err error) {
 	result = make([]string, 0, p.Size)
 	search := esClient.Search().Index(esIndex).Type(esType)
-	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", p.Type))
 	suggester := elastic.NewCompletionSuggester("completion-suggest").
 		Text(p.Text).Field("name2").SkipDuplicates(true).Size(p.Size)
-	search = search.Query(query).Suggester(suggester)
+	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
 		return
@@ -98,10 +97,9 @@ func (p *suggestParam) completionSuggest() (result []string, err error) {
 func (p *suggestParam) termSuggest() (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
-	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", p.Type))
 	suggester := elastic.NewTermSuggester("term-suggest").
 		Text(p.Text).Field("name").Size(1).SuggestMode("popular")
-	search = search.Query(query).Suggester(suggester)
+	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
 		return
@@ -217,7 +215,7 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "torrent"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(1.0)))
+			elastic.NewMatchQuery("name", input).Boost(1.0),))
 		//elastic.NewMatchQuery("files.path", input).Boost(1.0)))
 
 		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
