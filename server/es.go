@@ -97,9 +97,10 @@ func (p *suggestParam) completionSuggest() (result []string, err error) {
 func (p *suggestParam) termSuggest() (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
+	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", p.Type))
 	suggester := elastic.NewTermSuggester("term-suggest").
 		Text(p.Text).Field("name").Size(1).SuggestMode("popular")
-	search = search.Suggester(suggester)
+	search = search.Query(query).Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
 		return

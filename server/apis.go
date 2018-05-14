@@ -12,6 +12,7 @@ import (
 type suggestParam struct {
 	Text string `form:"text" binding:"required"`
 	Size int    `form:"size"`
+	Type string `form:"type"`
 
 	ctx  context.Context
 }
@@ -55,6 +56,9 @@ func Suggest(c *gin.Context) {
 
 	if param.Size == 0 {
 		param.Size = 10
+	}
+	if param.Type == "" {
+		param.Type = "torrent"
 	}
 	param.ctx = c.Request.Context()
 
