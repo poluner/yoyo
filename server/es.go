@@ -80,9 +80,9 @@ func (p *suggestParam) completionSuggest() (result []string, err error) {
 
 	field := "name2"
 	if p.Type == "imdb" {
-		field = "name3"
+		field = "title2"
 	} else if p.Type == "mv" {
-		field = "name4"
+		field = "title3"
 	}
 	suggester := elastic.NewCompletionSuggester("completion-suggest").
 		Text(p.Text).Field(field).SkipDuplicates(true).Size(p.Size)
