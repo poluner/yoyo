@@ -20,7 +20,7 @@ func (t *JsonTime) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	i, err := time.Parse("2006-01-02", string(b))
+	i, err := time.Parse("2006-01-02", strings.Trim(string(b), "\""))
 	if err != nil {
 		return err
 	}
