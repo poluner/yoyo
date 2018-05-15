@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"time"
 	"context"
 	"github.com/LiuRoy/xgorm"
@@ -26,7 +27,10 @@ type IMDBYoutube struct {
 	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
 	FilmId    string    `gorm:"column:film_id;type:varchar(20)"`
 	VideoName string    `gorm:"column:video_name;type:varchar(300)"`
-	PlayUrl   string    `gorm:"column:play_url;type:varchar(100)"`
+	PlayId    string    `gorm:"column:play_id;type:varchar(20)"`
+	Cover     string    `gorm:"column:cover;type:varchar(100)"`
+	Duration  int32     `gorm:"column:duration;type:int"`
+	ViewCount int64     `gorm:"column:view_count;type:bigint"`
 	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
 }
 
@@ -41,8 +45,11 @@ type TorrentItem struct {
 }
 
 type YoutubeItem struct {
-	Name     string `json:"name"`
-	PlayUrl  string `json:"play_url"`
+	Name      string `json:"name"`
+	PlayUrl   string `json:"play_url"`
+	Cover     string `json:"cover"`
+	Duration  int32  `json:"duration"`
+	ViewCount int64  `json:"view_count"`
 }
 
 func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]*TorrentItem, err error) {
@@ -93,7 +100,10 @@ func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string]
 
 		videos = append(videos, &YoutubeItem{
 			Name: record.VideoName,
-			PlayUrl: record.PlayUrl,
+			PlayUrl: fmt.Sprintf("https://m.youtube.com/watch?v=%s", record.PlayId),
+			Cover: record.Cover,
+			Duration: record.Duration,
+			ViewCount: record.ViewCount,
 		})
 		youtubeMap[record.FilmId] = videos
 	}

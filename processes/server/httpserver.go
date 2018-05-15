@@ -49,6 +49,7 @@ func main() {
 	router.POST("/yoyo/update", server.UpdateBTMetaInfo)
 	router.GET("/yoyo/movie/search", server.SearchMovie)
 	router.GET("/yoyo/mv/search", server.SearchMV)
+	router.GET("/yoyo/movie/discover", server.DiscoverMovie)
 
 	endless.ListenAndServe(address, router)
 	os.Exit(0)

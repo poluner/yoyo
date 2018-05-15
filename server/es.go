@@ -38,7 +38,7 @@ type Torrent struct {
 
 type Movie struct {
 	Id         string               `json:"id"`
-	Name       string               `json:"name"`
+	Title       string              `json:"title"`
 	Alias      string               `json:"alias"`
 	Year       int                  `json:"year"`
 	Genre      []string             `json:"genre,omitempty"`
@@ -64,7 +64,7 @@ type Movie struct {
 
 type MV struct {
 	Id         string               `json:"id"`
-	Name       string               `json:"name"`
+	Title       string              `json:"title"`
 	Slate      string               `json:"slate"`
 	Poster     string               `json:"poster"`
 	Genre      []string             `json:"genre,omitempty"`
@@ -77,8 +77,15 @@ type MV struct {
 func (p *suggestParam) completionSuggest() (result []string, err error) {
 	result = make([]string, 0, p.Size)
 	search := esClient.Search().Index(esIndex).Type(esType)
+
+	field := "name2"
+	if p.Type == "imdb" {
+		field = "name3"
+	} else if p.Type == "mv" {
+		field = "name4"
+	}
 	suggester := elastic.NewCompletionSuggester("completion-suggest").
-		Text(p.Text).Field("name2").SkipDuplicates(true).Size(p.Size)
+		Text(p.Text).Field(field).SkipDuplicates(true).Size(p.Size)
 	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
@@ -97,10 +104,14 @@ func (p *suggestParam) completionSuggest() (result []string, err error) {
 func (p *suggestParam) termSuggest() (result []string, err error) {
 	result = make([]string, 0, 1)
 	search := esClient.Search().Index(esIndex).Type(esType)
-	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", p.Type))
+
+	field := "title"
+	if p.Type == "torrent" {
+		field = "name"
+	}
 	suggester := elastic.NewTermSuggester("term-suggest").
-		Text(p.Text).Field("name").Size(1).SuggestMode("popular")
-	search = search.Query(query).Suggester(suggester)
+		Text(p.Text).Field(field).Size(1).SuggestMode("popular")
+	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
 		return
@@ -287,7 +298,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(2.0),
+			elastic.NewMatchQuery("title", input).Boost(2.0),
 			elastic.NewMatchQuery("alias", input).Boost(2.0),
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
@@ -301,7 +312,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 		collectFunction = collectFunction.Origin(time.Now()).Offset("120d").Scale("36500d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
-		highlight := elastic.NewHighlight().Field("name")
+		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
 	}
@@ -357,9 +368,9 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "mv"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(1.0),))
+			elastic.NewMatchQuery("title", input).Boost(1.0),))
 
-		highlight := elastic.NewHighlight().Field("name")
+		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(boolQuery).Highlight(highlight)
 		search = search.Sort("_score", false)
 	}
@@ -382,6 +393,72 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 		}
 
 		item.Highlight = hit.Highlight
+		result = append(result, &item)
+	}
+
+	return
+}
+
+func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "movie-discover")
+	defer seg.Close(err)
+
+	result = make([]*Movie, 0, p.Limit)
+	if p.Offset + p.Limit > maxResultWindow {
+		return
+	}
+
+	search := esClient.Search().Index(esIndex).Type(esType)
+
+	query := elastic.NewBoolQuery()
+	query = query.Must(elastic.NewTermQuery("type", "imdb"))
+
+	var hasCondition bool
+	conditionQuery := elastic.NewBoolQuery()
+	if p.Year != 0 {
+		conditionQuery.Should(elastic.NewTermQuery("year", p.Year))
+		hasCondition = true
+	}
+	if p.Language != "" {
+		conditionQuery.Should(elastic.NewTermQuery("language", p.Language))
+		hasCondition = true
+	}
+	if p.Country != "" {
+		conditionQuery.Should(elastic.NewTermQuery("country", p.Country))
+		hasCondition = true
+	}
+	if p.Genre != "" {
+		conditionQuery.Should(elastic.NewTermQuery("genre", p.Genre))
+		hasCondition = true
+	}
+	if hasCondition {
+		query.Must(conditionQuery)
+	}
+
+	search = search.Query(query)
+	if p.Sort == "release" {
+		search = search.Sort("release", false)
+	} else if p.Sort == "rating_value" {
+		search = search.Sort("rating_value", false)
+	}
+
+	search = search.From(p.Offset).Size(p.Limit)
+	res, err := search.Do(p.ctx)
+	if err != nil {
+		return
+	}
+
+	total = res.TotalHits()
+	if total > maxResultWindow {
+		total = maxResultWindow
+	}
+	for _, hit := range res.Hits.Hits {
+		item := Movie{}
+		err = json.Unmarshal(*hit.Source, &item)
+		if err != nil {
+			continue
+		}
+
 		result = append(result, &item)
 	}
 

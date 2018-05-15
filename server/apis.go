@@ -39,6 +39,19 @@ type updateParam struct {
 	ctx      context.Context
 }
 
+type discoverParam struct {
+	Genre    string    `form:"genre"`
+	Year     int       `form:"year"`
+	Country  string    `form:"country"`
+	Language string    `form:"language"`
+	Sort     string    `form:"sort"`
+
+	Offset   int       `form:"offset"`
+	Limit    int       `form:"limit"`
+
+	ctx      context.Context
+}
+
 func Suggest(c *gin.Context) {
 	var (
 		err   error
@@ -249,6 +262,67 @@ func SearchMV(c *gin.Context) {
 			"limit":   strconv.Itoa(param.Limit),
 			"total":   strconv.Itoa(int(total)),
 			"length":  strconv.Itoa(len(result)),
+			"version": "1.0",
+		},
+		RequestHeader: c.Request.Header,
+		CreateTime:    time.Now(),
+	}
+	event.Push(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"total":  total,
+		"data":   result,
+	})
+}
+
+func DiscoverMovie(c *gin.Context) {
+	var (
+		err   error
+		param discoverParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	if param.Sort == "" {
+		param.Sort = "rating_value"
+	}
+	param.ctx = c.Request.Context()
+	total, result, err := param.Discover()
+
+	event := KEvent{
+		EventClass: 1,
+		EventName:  "movie_discover",
+		Attributes: []string{"discover", "movie"},
+		ExtData: map[string]string{
+			"genre":    param.Genre,
+			"language": param.Language,
+			"country":  param.Country,
+			"year":     strconv.Itoa(param.Year),
+			"sort":     param.Sort,
+			"offset":   strconv.Itoa(param.Offset),
+			"limit":    strconv.Itoa(param.Limit),
+			"total":    strconv.Itoa(int(total)),
+			"length":   strconv.Itoa(len(result)),
 			"version": "1.0",
 		},
 		RequestHeader: c.Request.Header,
