@@ -18,7 +18,7 @@ type suggestParam struct {
 }
 
 type searchParam struct {
-	Text   string `form:"text"`
+	Text   string `form:"text" binding:"required"`
 	Offset int    `form:"offset"`
 	Limit  int    `form:"limit"`
 
@@ -309,27 +309,6 @@ func DiscoverMovie(c *gin.Context) {
 	}
 	param.ctx = c.Request.Context()
 	total, result, err := param.Discover()
-
-	event := KEvent{
-		EventClass: 1,
-		EventName:  "movie_discover",
-		Attributes: []string{"discover", "movie"},
-		ExtData: map[string]string{
-			"genre":    param.Genre,
-			"language": param.Language,
-			"country":  param.Country,
-			"year":     strconv.Itoa(param.Year),
-			"sort":     param.Sort,
-			"offset":   strconv.Itoa(param.Offset),
-			"limit":    strconv.Itoa(param.Limit),
-			"total":    strconv.Itoa(int(total)),
-			"length":   strconv.Itoa(len(result)),
-			"version": "1.0",
-		},
-		RequestHeader: c.Request.Header,
-		CreateTime:    time.Now(),
-	}
-	event.Push(c.Request.Context())
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

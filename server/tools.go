@@ -20,12 +20,12 @@ func (t *JsonTime) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	i, err := strconv.ParseInt(s, 10, 64)
+	i, err := time.Parse("2006-01-02", string(b))
 	if err != nil {
 		return err
 	}
 
-	t.Time = time.Unix(i, 0)
+	t.Time = i
 	return nil
 }
 
