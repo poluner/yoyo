@@ -38,7 +38,8 @@ type Torrent struct {
 
 type Movie struct {
 	Id         string               `json:"id"`
-	Title       string              `json:"title"`
+	Type       string               `json:"type"`
+	Title      string               `json:"title"`
 	Alias      string               `json:"alias"`
 	Year       int                  `json:"year"`
 	Genre      []string             `json:"genre,omitempty"`
@@ -54,7 +55,7 @@ type Movie struct {
 	Country    []string             `json:"country,omitempty"`
 	Language   []string             `json:"language,omitempty"`
 	Runtime    int                  `json:"runtime,omitempty"`
-	Release    string               `json:"release,omitempty"`
+	Release    JsonTime             `json:"release,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 
@@ -64,7 +65,8 @@ type Movie struct {
 
 type MV struct {
 	Id         string               `json:"id"`
-	Title       string              `json:"title"`
+	Type       string               `json:"type"`
+	Title      string               `json:"title"`
 	Slate      string               `json:"slate"`
 	Poster     string               `json:"poster"`
 	Genre      []string             `json:"genre,omitempty"`
