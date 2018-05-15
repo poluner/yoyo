@@ -45,6 +45,7 @@ type discoverParam struct {
 	Country  string    `form:"country"`
 	Language string    `form:"language"`
 	Sort     string    `form:"sort"`
+	Ascend   int       `form:"ascending"`
 
 	Offset   int       `form:"offset"`
 	Limit    int       `form:"limit"`

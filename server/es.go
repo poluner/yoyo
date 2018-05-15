@@ -437,9 +437,11 @@ func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
 
 	search = search.Query(query)
 	if p.Sort == "release" {
-		search = search.Sort("release", false)
+		search = search.Sort("release", p.Ascend == 1)
 	} else if p.Sort == "rating_value" {
-		search = search.Sort("rating_value", false)
+		search = search.Sort("rating_value", p.Ascend == 1)
+	} else if p.Sort == "rating_count" {
+		search = search.Sort("rating_count", p.Ascend == 1)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
