@@ -38,7 +38,7 @@ type Torrent struct {
 
 type Movie struct {
 	Id         string               `json:"id"`
-	Type       string               `json:"type"`
+	Topic      string               `json:"topic"`
 	Title      string               `json:"title"`
 	Alias      string               `json:"alias"`
 	Year       int                  `json:"year"`
@@ -65,13 +65,14 @@ type Movie struct {
 
 type MV struct {
 	Id         string               `json:"id"`
-	Type       string               `json:"type"`
+	Topic      string               `json:"topic"`
 	Title      string               `json:"title"`
 	Slate      string               `json:"slate"`
 	Poster     string               `json:"poster"`
 	Genre      []string             `json:"genre,omitempty"`
 	Runtime    int                  `json:"runtime,omitempty"`
 	Hot        int                  `json:"hot,omitempty"`
+	Cracked    bool                 `json:"cracked"`
 
 	Highlight  map[string][]string `json:"highlight,omitempty"`
 }
@@ -169,7 +170,6 @@ func (p *updateParam)UpdateTorrent() (err error) {
 		if p.Meta.Name != "" {
 			item.Name = p.Meta.Name
 			item.Name2 = item.Name
-			item.Files = p.Meta.Files
 			item.Download = p.Hot
 			item.CollectedAt = time.Now()
 			item.Type = "torrent"
@@ -338,6 +338,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 		}
 
 		item.Highlight = hit.Highlight
+		item.Topic = "imdb"
 
 		filmIds = append(filmIds, item.Id)
 		result = append(result, &item)
@@ -395,6 +396,7 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 		}
 
 		item.Highlight = hit.Highlight
+		item.Topic = "mv"
 		result = append(result, &item)
 	}
 
@@ -463,6 +465,7 @@ func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
 			continue
 		}
 
+		item.Topic = "imdb"
 		result = append(result, &item)
 	}
 
