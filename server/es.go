@@ -482,6 +482,7 @@ func (p *getParam) GetMovie() (result *Movie, err error) {
 			return
 		}
 		result = &movie
+		return
 	}
 
 	search := esClient.Search().Index(esIndex).Type(esType)
@@ -529,6 +530,7 @@ func (p *getParam) GetMV() (result *MV, err error) {
 			return
 		}
 		result = &mv
+		return
 	}
 
 	search := esClient.Search().Index(esIndex).Type(esType)
