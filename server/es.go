@@ -509,7 +509,7 @@ func (p *getParam) GetMovie() (result *Movie, err error) {
 	movie.Youtube = youtubeMap[p.Id]
 
 	cache, e = json.Marshal(&movie)
-	if e != nil {
+	if e == nil {
 		redisConn.Set(p.Id, cache, time.Hour * 2)
 	}
 	result = &movie
@@ -550,7 +550,7 @@ func (p *getParam) GetMV() (result *MV, err error) {
 	}
 
 	cache, e = json.Marshal(&mv)
-	if e != nil {
+	if e == nil {
 		redisConn.Set(p.Id, cache, time.Hour * 2)
 	}
 	result = &mv
