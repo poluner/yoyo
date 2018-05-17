@@ -53,6 +53,13 @@ type discoverParam struct {
 	ctx      context.Context
 }
 
+type getParam struct {
+	Id       string    `form:"id" binding:"required"`
+
+	ctx      context.Context
+}
+
+
 func Suggest(c *gin.Context) {
 	var (
 		err   error
@@ -322,6 +329,88 @@ func DiscoverMovie(c *gin.Context) {
 		"result": "ok",
 		"code":   noError,
 		"total":  total,
+		"data":   result,
+	})
+}
+
+func GetMovie(c *gin.Context) {
+	var (
+		err   error
+		param getParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetMovie()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	if result == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "no resource",
+			"code":   noError,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+func GetMV(c *gin.Context) {
+	var (
+		err   error
+		param getParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetMV()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	if result == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "no resource",
+			"code":   noError,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
 		"data":   result,
 	})
 }

@@ -50,6 +50,8 @@ func main() {
 	router.GET("/yoyo/movie/search", server.SearchMovie)
 	router.GET("/yoyo/mv/search", server.SearchMV)
 	router.GET("/yoyo/movie/discover", server.DiscoverMovie)
+	router.GET("/yoyo/movie", server.GetMovie)
+	router.GET("/yoyo/mv", server.GetMV)
 
 	endless.ListenAndServe(address, router)
 	os.Exit(0)

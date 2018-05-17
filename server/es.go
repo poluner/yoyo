@@ -38,7 +38,7 @@ type Torrent struct {
 
 type Movie struct {
 	Id         string               `json:"id"`
-	Topic      string               `json:"topic"`
+	Type       string               `json:"type"`
 	Title      string               `json:"title"`
 	Alias      string               `json:"alias"`
 	Year       int                  `json:"year"`
@@ -65,7 +65,7 @@ type Movie struct {
 
 type MV struct {
 	Id         string               `json:"id"`
-	Topic      string               `json:"topic"`
+	Type       string               `json:"type"`
 	Title      string               `json:"title"`
 	Slate      string               `json:"slate"`
 	Poster     string               `json:"poster"`
@@ -338,7 +338,6 @@ func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 		}
 
 		item.Highlight = hit.Highlight
-		item.Topic = "imdb"
 
 		filmIds = append(filmIds, item.Id)
 		result = append(result, &item)
@@ -396,7 +395,6 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 		}
 
 		item.Highlight = hit.Highlight
-		item.Topic = "mv"
 		result = append(result, &item)
 	}
 
@@ -465,9 +463,96 @@ func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
 			continue
 		}
 
-		item.Topic = "imdb"
 		result = append(result, &item)
 	}
 
+	return
+}
+
+
+func (p *getParam) GetMovie() (result *Movie, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "movie-get")
+	defer seg.Close(err)
+
+	cache, e := redisConn.Get(p.Id).Bytes()
+	if e == nil && len(cache) > 0 {
+		movie := Movie{}
+		err = json.Unmarshal(cache, &movie)
+		if err != nil {
+			return
+		}
+		result = &movie
+	}
+
+	search := esClient.Search().Index(esIndex).Type(esType)
+	query := elastic.NewTermQuery("id", p.Id)
+	search = search.Query(query)
+	res, err := search.Do(p.ctx)
+	if err != nil {
+		return
+	}
+	if len(res.Hits.Hits) == 0 {
+		return
+	}
+
+	movie := Movie{}
+	hit := res.Hits.Hits[0]
+	err = json.Unmarshal(*hit.Source, &movie)
+	if err != nil {
+		return
+	}
+
+	filmIds := []string{p.Id}
+	btMap, _ := QueryTorrent(p.ctx, filmIds)
+	youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
+	movie.BT = btMap[p.Id]
+	movie.Youtube = youtubeMap[p.Id]
+
+	cache, e = json.Marshal(&movie)
+	if e != nil {
+		redisConn.Set(p.Id, cache, time.Hour * 2)
+	}
+	result = &movie
+	return
+}
+
+
+func (p *getParam) GetMV() (result *MV, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "mv-get")
+	defer seg.Close(err)
+
+	cache, e := redisConn.Get(p.Id).Bytes()
+	if e == nil && len(cache) > 0 {
+		mv := MV{}
+		err = json.Unmarshal(cache, &mv)
+		if err != nil {
+			return
+		}
+		result = &mv
+	}
+
+	search := esClient.Search().Index(esIndex).Type(esType)
+	query := elastic.NewTermQuery("id", p.Id)
+	search = search.Query(query)
+	res, err := search.Do(p.ctx)
+	if err != nil {
+		return
+	}
+	if len(res.Hits.Hits) == 0 {
+		return
+	}
+
+	mv := MV{}
+	hit := res.Hits.Hits[0]
+	err = json.Unmarshal(*hit.Source, &mv)
+	if err != nil {
+		return
+	}
+
+	cache, e = json.Marshal(&mv)
+	if e != nil {
+		redisConn.Set(p.Id, cache, time.Hour * 2)
+	}
+	result = &mv
 	return
 }

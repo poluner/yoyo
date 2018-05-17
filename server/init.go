@@ -1,6 +1,7 @@
 package server
 
 import (
+	"gopkg.in/redis.v5"
 	"github.com/LiuRoy/xgorm"
 	"github.com/olivere/elastic"
 	"github.com/aws/aws-sdk-go/aws"
@@ -38,6 +39,12 @@ func init() {
 		panic(err)
 	}
 	dbConn.LogMode(false)
+
+	redisOpt, err := redis.ParseURL(redisUrl)
+	if err != nil {
+		panic(err)
+	}
+	redisConn = redis.NewClient(redisOpt)
 
 	esClient, err = elastic.NewSimpleClient(elastic.SetURL(esUrl), elastic.SetHttpClient(xray.Client(nil)))
 	if err != nil {

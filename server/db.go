@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"time"
 	"context"
+	"gopkg.in/redis.v5"
 	"github.com/LiuRoy/xgorm"
 )
 
-var dbConn *xgorm.DB
+var (
+	dbConn *xgorm.DB
+	redisConn *redis.Client
+)
 
 
 type IMDBTorrent struct {
