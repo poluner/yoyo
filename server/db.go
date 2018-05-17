@@ -56,8 +56,8 @@ type YoutubeItem struct {
 	ViewCount int64  `json:"view_count"`
 }
 
-func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]*TorrentItem, err error) {
-	btMap = make(map[string][]*TorrentItem)
+func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]TorrentItem, err error) {
+	btMap = make(map[string][]TorrentItem)
 	if filmIds == nil || len(filmIds) == 0 {
 		return
 	}
@@ -71,10 +71,10 @@ func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]*To
 	for _, record := range records {
 		torrents, ok := btMap[record.FilmId]
 		if !ok {
-			torrents = make([]*TorrentItem, 0, 5)
+			torrents = make([]TorrentItem, 0, 5)
 		}
 
-		torrents = append(torrents, &TorrentItem{
+		torrents = append(torrents, TorrentItem{
 			Name: record.BtName,
 			InfoHash: record.InfoHash,
 			Length: record.Length,
@@ -84,8 +84,8 @@ func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]*To
 	return
 }
 
-func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string][]*YoutubeItem, err error) {
-	youtubeMap = make(map[string][]*YoutubeItem)
+func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string][]YoutubeItem, err error) {
+	youtubeMap = make(map[string][]YoutubeItem)
 	if filmIds == nil || len(filmIds) == 0 {
 		return
 	}
@@ -99,10 +99,10 @@ func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string]
 	for _, record := range records {
 		videos, ok := youtubeMap[record.FilmId]
 		if !ok {
-			videos = make([]*YoutubeItem, 0, 5)
+			videos = make([]YoutubeItem, 0, 5)
 		}
 
-		videos = append(videos, &YoutubeItem{
+		videos = append(videos, YoutubeItem{
 			Name: record.VideoName,
 			PlayUrl: fmt.Sprintf("https://m.youtube.com/watch?v=%s", record.PlayId),
 			Cover: record.Cover,

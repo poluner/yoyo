@@ -59,8 +59,8 @@ type Movie struct {
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 
-	Youtube    []*YoutubeItem       `json:"youtube,omitempty"`
-	BT         []*TorrentItem       `json:"bt,omitempty"`
+	Youtube    []YoutubeItem       `json:"youtube,omitempty"`
+	BT         []TorrentItem       `json:"bt,omitempty"`
 }
 
 type MV struct {
