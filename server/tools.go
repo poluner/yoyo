@@ -13,20 +13,27 @@ type JsonTime struct {
 	time.Time
 }
 
-func (t *JsonTime) UnmarshalJSON(b []byte) error {
+func (t *JsonTime) UnmarshalJSON(b []byte) (err error) {
 	s := string(b)
 	if s == "null" {
 		t.Time = time.Time{}
-		return nil
+		return
 	}
 
-	i, err := time.Parse("2006-01-02", strings.Trim(string(b), "\""))
-	if err != nil {
-		return err
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err == nil {
+		t.Time = time.Unix(i, 0)
+		return
 	}
 
-	t.Time = i
-	return nil
+	err = nil
+	st, err := time.Parse("2006-01-02", strings.Trim(string(b), "\""))
+	if err == nil {
+		t.Time = st
+		return
+	}
+
+	return
 }
 
 func (t JsonTime) MarshalJSON() ([]byte, error) {
