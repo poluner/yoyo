@@ -56,7 +56,7 @@ type Resource struct {
 	Country    []string             `json:"country,omitempty"`
 	Language   []string             `json:"language,omitempty"`
 	Runtime    int                  `json:"runtime,omitempty"`
-	Release    JsonTime             `json:"release,omitempty"`
+	Release    string               `json:"release,omitempty"`
 	Hot        int                  `json:"hot,omitempty"`
 	Cracked    bool                 `json:"cracked,omitempty"`
 	Youtube    []YoutubeItem        `json:"youtube,omitempty"`
@@ -300,7 +300,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		query = query.Query(boolQuery)
 
 		hotFunction := elastic.NewFieldValueFactorFunction()
-		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(1).Weight(0.5)
+		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(0.5)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("release")
 		collectFunction = collectFunction.Origin(time.Now()).Offset("120d").Scale("36500d").Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
