@@ -296,13 +296,13 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
-		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
+		query := elastic.NewFunctionScoreQuery().BoostMode("sum")
 		query = query.Query(boolQuery)
 
 		hotFunction := elastic.NewFieldValueFactorFunction()
-		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(0.5)
-		collectFunction := elastic.NewGaussDecayFunction().FieldName("release")
-		collectFunction = collectFunction.Origin(time.Now()).Offset("120d").Scale("36500d").Decay(0.5).Weight(0.1)
+		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(2.0)
+		collectFunction := elastic.NewGaussDecayFunction().FieldName("year")
+		collectFunction = collectFunction.Origin(time.Now().Year()).Offset(1).Scale(10).Decay(0.5).Weight(2.0)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
 		highlight := elastic.NewHighlight().Field("title")
