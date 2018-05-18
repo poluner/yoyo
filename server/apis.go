@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 	"context"
-	"fmt"
 )
 
 type suggestParam struct {
@@ -56,13 +55,11 @@ type discoverParam struct {
 
 type getParam struct {
 	Id       string    `form:"id" binding:"required"`
-
 	ctx      context.Context
 }
 
 type mgetParam struct {
-	Ids      []string    `form:"ids" binding:"required"`
-
+	Ids      []string  `form:"id" binding:"required"`
 	ctx      context.Context
 }
 
@@ -265,7 +262,6 @@ func SearchMV(c *gin.Context) {
 		param.Limit = 10
 	}
 	param.ctx = c.Request.Context()
-	fmt.Printf("%+v\n", param)
 	total, result, err := param.SearchMV()
 
 	event := KEvent{
@@ -341,7 +337,7 @@ func DiscoverMovie(c *gin.Context) {
 	})
 }
 
-func GetMovie(c *gin.Context) {
+func GetResource(c *gin.Context) {
 	var (
 		err   error
 		param getParam
@@ -357,48 +353,7 @@ func GetMovie(c *gin.Context) {
 	}
 
 	param.ctx = c.Request.Context()
-	result, err := param.GetMovie()
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"result": "get failed",
-			"code":   internalErr,
-		})
-		return
-	}
-
-	if result == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"result": "no resource",
-			"code":   noError,
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"result": "ok",
-		"code":   noError,
-		"data":   result,
-	})
-}
-
-func GetMV(c *gin.Context) {
-	var (
-		err   error
-		param getParam
-	)
-
-	err = c.BindQuery(&param)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"result": "params invalid",
-			"code":   paramsInvalid,
-		})
-		return
-	}
-
-	param.ctx = c.Request.Context()
-	result, err := param.GetMV()
+	result, err := param.GetResource()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -438,7 +393,6 @@ func MGetResource(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("%+v\n", param)
 	param.ctx = c.Request.Context()
 	result, err := param.MGet()
 

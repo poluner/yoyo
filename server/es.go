@@ -466,8 +466,8 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 	return
 }
 
-func (p *getParam) GetMovie() (result *Resource, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "movie-get")
+func (p *getParam) GetResource() (result *Resource, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "resource-get")
 	defer seg.Close(err)
 
 	cache, e := redisConn.Get(p.Id).Bytes()
@@ -492,79 +492,40 @@ func (p *getParam) GetMovie() (result *Resource, err error) {
 		return
 	}
 
-	movie := Resource{}
+	resource := Resource{}
 	hit := res.Hits.Hits[0]
-	err = json.Unmarshal(*hit.Source, &movie)
+	err = json.Unmarshal(*hit.Source, &resource)
 	if err != nil {
 		return
 	}
 
-	filmIds := []string{p.Id}
-	btMap, _ := QueryTorrent(p.ctx, filmIds)
-	youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
-	movie.BT = btMap[p.Id]
-	movie.Youtube = youtubeMap[p.Id]
-
-	cache, e = json.Marshal(&movie)
-	if e == nil {
-		redisConn.Set(p.Id, cache, time.Hour * 2)
-	}
-	result = &movie
-	return
-}
-
-func (p *getParam) GetMV() (result *Resource, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "mv-get")
-	defer seg.Close(err)
-
-	cache, e := redisConn.Get(p.Id).Bytes()
-	if e == nil && len(cache) > 0 {
-		mv := Resource{}
-		err = json.Unmarshal(cache, &mv)
-		if err != nil {
-			return
-		}
-		result = &mv
-		return
-	}
-
-	search := esClient.Search().Index(esIndex).Type(esType)
-	query := elastic.NewTermQuery("id", p.Id)
-	search = search.Query(query)
-	res, err := search.Do(p.ctx)
-	if err != nil {
-		return
-	}
-	if len(res.Hits.Hits) == 0 {
-		return
-	}
-
-	mv := Resource{}
-	hit := res.Hits.Hits[0]
-	err = json.Unmarshal(*hit.Source, &mv)
-	if err != nil {
-		return
-	}
-
-	if mv.Genre != nil && len(mv.Genre) > 0 {
-		if mv.Genre[0] == "youtube" {
-			mv.Cracked = true
+	if resource.Type == "imdb" {
+		filmIds := []string{p.Id}
+		btMap, _ := QueryTorrent(p.ctx, filmIds)
+		youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
+		resource.BT = btMap[p.Id]
+		resource.Youtube = youtubeMap[p.Id]
+	} else if resource.Type == "mv" {
+		if resource.Genre != nil && len(resource.Genre) > 0 {
+			if resource.Genre[0] == "youtube" {
+				resource.Cracked = true
+			}
 		}
 	}
 
-	cache, e = json.Marshal(&mv)
+	cache, e = json.Marshal(&resource)
 	if e == nil {
 		redisConn.Set(p.Id, cache, time.Hour * 2)
 	}
-	result = &mv
+	result = &resource
 	return
 }
 
-func (p *mgetParam) MGet() (result []*Resource, err error) {
+func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "resource-mget")
 	defer seg.Close(err)
 
-	result = make([]*Resource, 0, 10)
+	result = make(map[string]*Resource)
 	if p.Ids == nil || len(p.Ids) == 0 {
 		return
 	}
@@ -584,6 +545,9 @@ func (p *mgetParam) MGet() (result []*Resource, err error) {
 		return
 	}
 
+	btMap, _ := QueryTorrent(p.ctx, p.Ids)
+	youtubeMap, _ := QueryYoutube(p.ctx, p.Ids)
+
 	for _, hit := range res.Hits.Hits {
 		item := Resource{}
 		err = json.Unmarshal(*hit.Source, &item)
@@ -591,13 +555,18 @@ func (p *mgetParam) MGet() (result []*Resource, err error) {
 			continue
 		}
 
-		if item.Type == "mv" && item.Genre != nil && len(item.Genre) > 0 {
-			if item.Genre[0] == "youtube" {
-				item.Cracked = true
+		if item.Type == "mv" {
+			if item.Genre != nil && len(item.Genre) > 0 {
+				if item.Genre[0] == "youtube" {
+					item.Cracked = true
+				}
 			}
+		} else if item.Type == "imdb" {
+			item.BT = btMap[item.Id]
+			item.Youtube = youtubeMap[item.Id]
 		}
 
-		result = append(result, &item)
+		result[item.Id] = &item
 	}
 
 	return
