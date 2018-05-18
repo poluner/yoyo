@@ -292,7 +292,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
 			elastic.NewMatchQuery("title", input).Boost(2.0),
-			elastic.NewMatchQuery("alias", input).Boost(2.0),
+			elastic.NewMatchQuery("alias", input).Boost(0.3),
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
