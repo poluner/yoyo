@@ -178,6 +178,10 @@ func (p *updateParam)UpdateTorrent() (err error) {
 				if !strings.HasPrefix(fileItem.Path[0], "_____") {
 					item.Files = append(item.Files, fileItem)
 				}
+
+				if fileItem.Path[0] == "Ultra XVid Codec Pack.exe " {
+					return
+				}
 			}
 
 			var total int
