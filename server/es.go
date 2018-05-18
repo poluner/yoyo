@@ -399,6 +399,12 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 		}
 
 		item.Highlight = hit.Highlight
+
+		if item.Genre != nil && len(item.Genre) > 0 {
+			if item.Genre[0] == "youtube" {
+				item.Cracked = true
+			}
+		}
 		result = append(result, &item)
 	}
 
@@ -553,6 +559,12 @@ func (p *getParam) GetMV() (result *MV, err error) {
 	err = json.Unmarshal(*hit.Source, &mv)
 	if err != nil {
 		return
+	}
+
+	if mv.Genre != nil && len(mv.Genre) > 0 {
+		if mv.Genre[0] == "youtube" {
+			mv.Cracked = true
+		}
 	}
 
 	cache, e = json.Marshal(&mv)
