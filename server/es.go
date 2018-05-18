@@ -36,19 +36,20 @@ type Torrent struct {
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
 
-type Movie struct {
+// mv和imdb类型
+type Resource struct {
 	Id         string               `json:"id"`
 	Type       string               `json:"type"`
 	Title      string               `json:"title"`
-	Alias      string               `json:"alias"`
-	Year       int                  `json:"year"`
+	Alias      string               `json:"alias,omitempty"`
+	Year       int                  `json:"year,omitempty"`
 	Genre      []string             `json:"genre,omitempty"`
 	Poster     string               `json:"poster"`
 	Slate      string               `json:"slate"`
-	SlateCover string               `json:"slate_cover"`
-	Desc       string               `json:"description"`
-	RateCount  int                  `json:"rating_count"`
-	RateValue  float32              `json:"rating_value"`
+	SlateCover string               `json:"slate_cover,omitempty"`
+	Desc       string               `json:"description,omitempty"`
+	RateCount  int                  `json:"rating_count,omitempty"`
+	RateValue  float32              `json:"rating_value,omitempty"`
 	Director   []string             `json:"director,omitempty"`
 	Creator    []string             `json:"creator,omitempty"`
 	Actor      []string             `json:"actor,omitempty"`
@@ -56,25 +57,12 @@ type Movie struct {
 	Language   []string             `json:"language,omitempty"`
 	Runtime    int                  `json:"runtime,omitempty"`
 	Release    JsonTime             `json:"release,omitempty"`
+	Hot        int                  `json:"hot,omitempty"`
+	Cracked    bool                 `json:"cracked,omitempty"`
+	Youtube    []YoutubeItem        `json:"youtube,omitempty"`
+	BT         []TorrentItem        `json:"bt,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
-
-	Youtube    []YoutubeItem       `json:"youtube,omitempty"`
-	BT         []TorrentItem       `json:"bt,omitempty"`
-}
-
-type MV struct {
-	Id         string               `json:"id"`
-	Type       string               `json:"type"`
-	Title      string               `json:"title"`
-	Slate      string               `json:"slate"`
-	Poster     string               `json:"poster"`
-	Genre      []string             `json:"genre,omitempty"`
-	Runtime    int                  `json:"runtime,omitempty"`
-	Hot        int                  `json:"hot,omitempty"`
-	Cracked    bool                 `json:"cracked"`
-
-	Highlight  map[string][]string `json:"highlight,omitempty"`
 }
 
 func (p *suggestParam) completionSuggest() (result []string, err error) {
@@ -285,12 +273,11 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 	return
 }
 
-
-func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
+func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-search")
 	defer seg.Close(err)
 
-	result = make([]*Movie, 0, p.Limit)
+	result = make([]*Resource, 0, p.Limit)
 	if p.Offset + p.Limit > maxResultWindow {
 		return
 	}
@@ -335,7 +322,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 	}
 	filmIds := make([]string, 0, p.Limit)
 	for _, hit := range res.Hits.Hits {
-		item := Movie{}
+		item := Resource{}
 		err = json.Unmarshal(*hit.Source, &item)
 		if err != nil {
 			continue
@@ -356,11 +343,11 @@ func (p *searchParam) SearchMovie() (total int64, result []*Movie, err error) {
 	return
 }
 
-func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
+func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "mv-search")
 	defer seg.Close(err)
 
-	result = make([]*MV, 0, p.Limit)
+	result = make([]*Resource, 0, p.Limit)
 	if p.Offset + p.Limit > maxResultWindow {
 		return
 	}
@@ -392,7 +379,7 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 		total = maxResultWindow
 	}
 	for _, hit := range res.Hits.Hits {
-		item := MV{}
+		item := Resource{}
 		err = json.Unmarshal(*hit.Source, &item)
 		if err != nil {
 			continue
@@ -411,11 +398,11 @@ func (p *searchParam) SearchMV() (total int64, result []*MV, err error) {
 	return
 }
 
-func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
+func (p *discoverParam) Discover() (total int64, result []*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-discover")
 	defer seg.Close(err)
 
-	result = make([]*Movie, 0, p.Limit)
+	result = make([]*Resource, 0, p.Limit)
 	if p.Offset + p.Limit > maxResultWindow {
 		return
 	}
@@ -467,7 +454,7 @@ func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
 		total = maxResultWindow
 	}
 	for _, hit := range res.Hits.Hits {
-		item := Movie{}
+		item := Resource{}
 		err = json.Unmarshal(*hit.Source, &item)
 		if err != nil {
 			continue
@@ -479,14 +466,13 @@ func (p *discoverParam) Discover() (total int64, result []*Movie, err error) {
 	return
 }
 
-
-func (p *getParam) GetMovie() (result *Movie, err error) {
+func (p *getParam) GetMovie() (result *Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-get")
 	defer seg.Close(err)
 
 	cache, e := redisConn.Get(p.Id).Bytes()
 	if e == nil && len(cache) > 0 {
-		movie := Movie{}
+		movie := Resource{}
 		err = json.Unmarshal(cache, &movie)
 		if err != nil {
 			return
@@ -506,7 +492,7 @@ func (p *getParam) GetMovie() (result *Movie, err error) {
 		return
 	}
 
-	movie := Movie{}
+	movie := Resource{}
 	hit := res.Hits.Hits[0]
 	err = json.Unmarshal(*hit.Source, &movie)
 	if err != nil {
@@ -527,14 +513,13 @@ func (p *getParam) GetMovie() (result *Movie, err error) {
 	return
 }
 
-
-func (p *getParam) GetMV() (result *MV, err error) {
+func (p *getParam) GetMV() (result *Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "mv-get")
 	defer seg.Close(err)
 
 	cache, e := redisConn.Get(p.Id).Bytes()
 	if e == nil && len(cache) > 0 {
-		mv := MV{}
+		mv := Resource{}
 		err = json.Unmarshal(cache, &mv)
 		if err != nil {
 			return
@@ -554,7 +539,7 @@ func (p *getParam) GetMV() (result *MV, err error) {
 		return
 	}
 
-	mv := MV{}
+	mv := Resource{}
 	hit := res.Hits.Hits[0]
 	err = json.Unmarshal(*hit.Source, &mv)
 	if err != nil {
@@ -572,5 +557,48 @@ func (p *getParam) GetMV() (result *MV, err error) {
 		redisConn.Set(p.Id, cache, time.Hour * 2)
 	}
 	result = &mv
+	return
+}
+
+func (p *mgetParam) MGet() (result []*Resource, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "resource-mget")
+	defer seg.Close(err)
+
+	result = make([]*Resource, 0, 10)
+	if p.Ids == nil || len(p.Ids) == 0 {
+		return
+	}
+
+	search := esClient.Search().Index(esIndex).Type(esType)
+	query := elastic.NewBoolQuery()
+	for _, id := range p.Ids {
+		query = query.Should(elastic.NewTermQuery("id", id))
+	}
+
+	search = search.Query(query)
+	res, err := search.Do(p.ctx)
+	if err != nil {
+		return
+	}
+	if len(res.Hits.Hits) == 0 {
+		return
+	}
+
+	for _, hit := range res.Hits.Hits {
+		item := Resource{}
+		err = json.Unmarshal(*hit.Source, &item)
+		if err != nil {
+			continue
+		}
+
+		if item.Type == "mv" && item.Genre != nil && len(item.Genre) > 0 {
+			if item.Genre[0] == "youtube" {
+				item.Cracked = true
+			}
+		}
+
+		result = append(result, &item)
+	}
+
 	return
 }
