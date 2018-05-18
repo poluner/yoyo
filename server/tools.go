@@ -37,12 +37,7 @@ func (t *JsonTime) UnmarshalJSON(b []byte) (err error) {
 }
 
 func (t JsonTime) MarshalJSON() ([]byte, error) {
-	timestamp := t.Time.Unix()
-	if timestamp < -4000000000 {
-		return []byte{}, nil
-	} else {
-		return []byte(fmt.Sprintf("%s", strconv.FormatInt(t.Time.Unix(), 10))), nil
-	}
+	return []byte(fmt.Sprintf("%s", strconv.FormatInt(t.Time.Unix(), 10))), nil
 }
 
 func clientIP(r *http.Request) (string, bool) {
