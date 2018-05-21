@@ -292,7 +292,6 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
 			elastic.NewMatchQuery("title", input).Boost(2.0),
-			elastic.NewMatchQuery("alias", input).Boost(0.3),
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
@@ -302,12 +301,14 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		hotFunction := elastic.NewFieldValueFactorFunction()
 		hotFunction = hotFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(2.0)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("year")
-		collectFunction = collectFunction.Origin(time.Now().Year()).Offset(1).Scale(10).Decay(0.5).Weight(2.0)
+		collectFunction = collectFunction.Origin(time.Now().Year()).Offset(1).Scale(10).Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
 
 		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
+
+		search = search.MinScore(10.0)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
