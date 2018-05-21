@@ -308,18 +308,16 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		query = query.Query(boolQuery)
 
 		recommendFunction := elastic.NewFieldValueFactorFunction()
-		recommendFunction = recommendFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(5.0)
-		rateCountFunction := elastic.NewFieldValueFactorFunction()
-		rateCountFunction = rateCountFunction.Field("rating_count").Modifier("ln2p").Missing(0).Weight(0.01)
+		recommendFunction = recommendFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(2.0)
 		yearFunction := elastic.NewGaussDecayFunction().FieldName("year")
 		yearFunction = yearFunction.Origin(time.Now().Year()).Offset(10).Scale(60).Decay(0.5).Weight(0.1)
-		query = query.AddScoreFunc(recommendFunction).AddScoreFunc(rateCountFunction).AddScoreFunc(yearFunction)
+		query = query.AddScoreFunc(recommendFunction).AddScoreFunc(yearFunction)
 
 		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
 
-		search = search.MinScore(2.0)
+		search = search.MinScore(1.5)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
