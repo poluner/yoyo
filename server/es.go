@@ -7,9 +7,13 @@ import (
 	"strings"
 	"time"
 	log "github.com/alecthomas/log4go"
+	"regexp"
 )
 
-var esClient *elastic.Client
+var (
+	esClient *elastic.Client
+	sizeFormatPattern = regexp.MustCompile(`@\..*\.jpg$`)
+)
 
 type FileItem struct {
 	Path   []string `json:"path"`
@@ -63,6 +67,11 @@ type Resource struct {
 	BT         []TorrentItem        `json:"bt,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
+}
+
+// 爬取的海报链接不是高平图片,需要转成高清链接
+func imdbPoster(poster string) string {
+	return sizeFormatPattern.ReplaceAllString(poster, "@.jpg")
 }
 
 func (p *suggestParam) completionSuggest() (result []string, err error) {
@@ -301,7 +310,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		recommendFunction := elastic.NewFieldValueFactorFunction()
 		recommendFunction = recommendFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(5.0)
 		rateCountFunction := elastic.NewFieldValueFactorFunction()
-		rateCountFunction = rateCountFunction.Field("rating_count").Modifier("ln2p").Missing(0).Weight(0.05)
+		rateCountFunction = rateCountFunction.Field("rating_count").Modifier("ln2p").Missing(0).Weight(0.01)
 		yearFunction := elastic.NewGaussDecayFunction().FieldName("year")
 		yearFunction = yearFunction.Origin(time.Now().Year()).Offset(10).Scale(60).Decay(0.5).Weight(0.1)
 		query = query.AddScoreFunc(recommendFunction).AddScoreFunc(rateCountFunction).AddScoreFunc(yearFunction)
@@ -342,6 +351,8 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 	for _, item := range result {
 		item.BT = btMap[item.Id]
 		item.Youtube = youtubeMap[item.Id]
+
+		item.Poster = imdbPoster(item.Poster)
 	}
 	return
 }
@@ -463,6 +474,7 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 			continue
 		}
 
+		item.Poster = imdbPoster(item.Poster)
 		result = append(result, &item)
 	}
 
@@ -508,6 +520,7 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
 		resource.BT = btMap[p.Id]
 		resource.Youtube = youtubeMap[p.Id]
+		resource.Poster = imdbPoster(resource.Poster)
 	} else if resource.Type == "mv" {
 		if resource.Genre != nil && len(resource.Genre) > 0 {
 			if resource.Genre[0] == "youtube" {
@@ -567,6 +580,7 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 		} else if item.Type == "imdb" {
 			item.BT = btMap[item.Id]
 			item.Youtube = youtubeMap[item.Id]
+			item.Poster = imdbPoster(item.Poster)
 		}
 
 		result[item.Id] = &item
