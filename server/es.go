@@ -12,7 +12,7 @@ import (
 
 var (
 	esClient *elastic.Client
-	sizeFormatPattern = regexp.MustCompile(`@\..*\.jpg$`)
+	sizeFormatPattern = regexp.MustCompile(`\._V1.*\.jpg$`)
 )
 
 type FileItem struct {
@@ -65,13 +65,14 @@ type Resource struct {
 	Cracked    bool                 `json:"cracked,omitempty"`
 	Youtube    []YoutubeItem        `json:"youtube,omitempty"`
 	BT         []TorrentItem        `json:"bt,omitempty"`
+	Video      []VideoItem          `json:"video,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
 
 // 爬取的海报链接不是高平图片,需要转成高清链接
 func imdbPoster(poster string) string {
-	return sizeFormatPattern.ReplaceAllString(poster, "@.jpg")
+	return sizeFormatPattern.ReplaceAllString(poster, ".jpg")
 }
 
 func (p *suggestParam) completionSuggest() (result []string, err error) {
@@ -516,8 +517,10 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		filmIds := []string{p.Id}
 		btMap, _ := QueryTorrent(p.ctx, filmIds)
 		youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
+		videoMap, _ := QueryVideo(p.ctx, filmIds)
 		resource.BT = btMap[p.Id]
 		resource.Youtube = youtubeMap[p.Id]
+		resource.Video = videoMap[p.Id]
 		resource.Poster = imdbPoster(resource.Poster)
 	} else if resource.Type == "mv" {
 		if resource.Genre != nil && len(resource.Genre) > 0 {

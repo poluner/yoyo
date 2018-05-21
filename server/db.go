@@ -42,6 +42,19 @@ func (IMDBYoutube) TableName() string {
 	return "imdb_youtube"
 }
 
+type IMDBVideo struct {
+	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
+	FilmId    string    `gorm:"column:film_id;type:varchar(20)"`
+	PlayUrl   string    `gorm:"column:play_id;type:varchar(100)"`
+	Cover     string    `gorm:"column:cover;type:varchar(300)"`
+	Duration  int32     `gorm:"column:duration;type:int"`
+	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+}
+
+func (IMDBVideo) TableName() string {
+	return "imdb_video"
+}
+
 type TorrentItem struct {
 	Name     string `json:"name"`
 	InfoHash string `json:"infohash"`
@@ -54,6 +67,12 @@ type YoutubeItem struct {
 	Cover     string `json:"cover"`
 	Duration  int32  `json:"duration"`
 	ViewCount int64  `json:"view_count"`
+}
+
+type VideoItem struct {
+	PlayUrl   string `json:"play_url"`
+	Cover     string `json:"cover"`
+	Duration  int32  `json:"duration"`
 }
 
 func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]TorrentItem, err error) {
@@ -110,6 +129,34 @@ func QueryYoutube(ctx context.Context, filmIds []string) (youtubeMap map[string]
 			ViewCount: record.ViewCount,
 		})
 		youtubeMap[record.FilmId] = videos
+	}
+	return
+}
+
+func QueryVideo(ctx context.Context, filmIds []string) (videoMap map[string][]VideoItem, err error) {
+	videoMap = make(map[string][]VideoItem)
+	if filmIds == nil || len(filmIds) == 0 {
+		return
+	}
+
+	var records []IMDBVideo
+	err = dbConn.Where("film_id in (?)", filmIds).Find(ctx, &records).Error
+	if err != nil {
+		return
+	}
+
+	for _, record := range records {
+		videos, ok := videoMap[record.FilmId]
+		if !ok {
+			videos = make([]VideoItem, 0, 10)
+		}
+
+		videos = append(videos, VideoItem{
+			PlayUrl: record.PlayUrl,
+			Cover: record.Cover,
+			Duration: record.Duration,
+		})
+		videoMap[record.FilmId] = videos
 	}
 	return
 }
