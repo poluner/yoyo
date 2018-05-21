@@ -295,7 +295,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
-		query := elastic.NewFunctionScoreQuery().BoostMode("sum")
+		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
 		query = query.Query(boolQuery)
 
 		hotFunction := elastic.NewFieldValueFactorFunction()
@@ -308,7 +308,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		search = search.Query(query).Highlight(highlight)
 		search = search.Sort("_score", false)
 
-		search = search.MinScore(10.0)
+		search = search.MinScore(1.0)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
