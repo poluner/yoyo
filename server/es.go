@@ -352,6 +352,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		item.Youtube = youtubeMap[item.Id]
 
 		item.Poster = imdbPoster(item.Poster)
+		item.SlateCover = imdbPoster(item.SlateCover)
 	}
 	return
 }
@@ -474,6 +475,7 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 		}
 
 		item.Poster = imdbPoster(item.Poster)
+		item.SlateCover = imdbPoster(item.SlateCover)
 		result = append(result, &item)
 	}
 
@@ -521,7 +523,9 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		resource.BT = btMap[p.Id]
 		resource.Youtube = youtubeMap[p.Id]
 		resource.Video = videoMap[p.Id]
+
 		resource.Poster = imdbPoster(resource.Poster)
+		resource.SlateCover = imdbPoster(resource.SlateCover)
 	} else if resource.Type == "mv" {
 		if resource.Genre != nil && len(resource.Genre) > 0 {
 			if resource.Genre[0] == "youtube" {
@@ -582,6 +586,7 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 			item.BT = btMap[item.Id]
 			item.Youtube = youtubeMap[item.Id]
 			item.Poster = imdbPoster(item.Poster)
+			item.SlateCover = imdbPoster(item.SlateCover)
 		}
 
 		result[item.Id] = &item

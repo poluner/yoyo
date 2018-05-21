@@ -45,7 +45,7 @@ func (IMDBYoutube) TableName() string {
 type IMDBVideo struct {
 	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
 	FilmId    string    `gorm:"column:film_id;type:varchar(20)"`
-	PlayUrl   string    `gorm:"column:play_id;type:varchar(100)"`
+	PlayUrl   string    `gorm:"column:play_url;type:varchar(100)"`
 	Cover     string    `gorm:"column:cover;type:varchar(300)"`
 	Duration  int32     `gorm:"column:duration;type:int"`
 	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
