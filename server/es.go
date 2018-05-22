@@ -557,7 +557,7 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 		query = query.Should(elastic.NewTermQuery("id", id))
 	}
 
-	search = search.Query(query)
+	search = search.Query(query).Size(len(p.Ids))
 	res, err := search.Do(p.ctx)
 	if err != nil {
 		return
