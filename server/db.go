@@ -55,12 +55,6 @@ func (IMDBVideo) TableName() string {
 	return "imdb_video"
 }
 
-type TorrentItem struct {
-	Name     string `json:"name"`
-	InfoHash string `json:"infohash"`
-	Length   int64  `json:"length"`
-}
-
 type YoutubeItem struct {
 	Name      string `json:"name"`
 	PlayUrl   string `json:"play_url"`
@@ -75,30 +69,17 @@ type VideoItem struct {
 	Duration  int32  `json:"duration"`
 }
 
-func QueryTorrent(ctx context.Context, filmIds []string) (btMap map[string][]TorrentItem, err error) {
-	btMap = make(map[string][]TorrentItem)
-	if filmIds == nil || len(filmIds) == 0 {
-		return
-	}
+func QueryTorrent(ctx context.Context, filmId string) (infohashs []string, err error) {
+	infohashs = make([]string, 0, 10)
 
 	var records []IMDBTorrent
-	err = dbConn.Where("film_id in (?)", filmIds).Find(ctx, &records).Error
+	err = dbConn.Where("film_id = ?", filmId).Find(ctx, &records).Error
 	if err != nil {
 		return
 	}
 
 	for _, record := range records {
-		torrents, ok := btMap[record.FilmId]
-		if !ok {
-			torrents = make([]TorrentItem, 0, 5)
-		}
-
-		torrents = append(torrents, TorrentItem{
-			Name: record.BtName,
-			InfoHash: record.InfoHash,
-			Length: record.Length,
-		})
-		btMap[record.FilmId] = torrents
+		infohashs = append(infohashs, record.InfoHash)
 	}
 	return
 }

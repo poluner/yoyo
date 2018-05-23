@@ -8,6 +8,7 @@ import (
 	"time"
 	log "github.com/alecthomas/log4go"
 	"regexp"
+	"context"
 )
 
 var (
@@ -64,7 +65,7 @@ type Resource struct {
 	Hot        int                  `json:"hot,omitempty"`
 	Cracked    bool                 `json:"cracked,omitempty"`
 	Youtube    []YoutubeItem        `json:"youtube,omitempty"`
-	BT         []TorrentItem        `json:"bt,omitempty"`
+	BT         []Torrent            `json:"bt,omitempty"`
 	Video      []VideoItem          `json:"video,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
@@ -73,6 +74,58 @@ type Resource struct {
 // 爬取的海报链接不是高平图片,需要转成高清链接
 func imdbPoster(poster string) string {
 	return sizeFormatPattern.ReplaceAllString(poster, ".jpg")
+}
+
+// 网站名称的第一个小写字母变大写
+func mvSiteProcess(site string) string {
+	if site == "" {
+		return site
+	}
+
+	tmp := []byte(site)
+	if tmp[0] >= 'a' && tmp[0] <= 'z' {
+		tmp[0] = tmp[0] - 32
+	}
+	return string(tmp)
+}
+
+func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err error) {
+	_, seg := xray.BeginSubsegment(ctx, "torrent-mget")
+	defer seg.Close(err)
+
+	result = make([]Torrent, 0, len(infohashs))
+	if infohashs == nil || len(infohashs) == 0 {
+		return
+	}
+
+	mget := esClient.Mget()
+	for _, id := range infohashs {
+		item := elastic.NewMultiGetItem().Index(esIndex).Type(esType).Id(id)
+		mget = mget.Add(item)
+	}
+
+	res, err := mget.Do(ctx)
+	if err != nil {
+		return
+	}
+
+	for _, hit := range res.Docs {
+		item := EsTorrent{}
+		err = json.Unmarshal(*hit.Source, &item)
+		if err != nil {
+			continue
+		}
+
+		t := Torrent{
+			Infohash:    hit.Id,
+			Name:        item.Name,
+			Length:      item.Length,
+			Download:    item.Download,
+			CollectedAt: JsonTime{item.CollectedAt},
+		}
+		result = append(result, t)
+	}
+	return
 }
 
 func (p *suggestParam) completionSuggest() (result []string, err error) {
@@ -345,10 +398,8 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		result = append(result, &item)
 	}
 
-	btMap, _ := QueryTorrent(p.ctx, filmIds)
 	youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
 	for _, item := range result {
-		item.BT = btMap[item.Id]
 		item.Youtube = youtubeMap[item.Id]
 
 		item.Poster = imdbPoster(item.Poster)
@@ -402,9 +453,8 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 		item.Highlight = hit.Highlight
 
 		if item.Genre != nil && len(item.Genre) > 0 {
-			if item.Genre[0] == "youtube" {
-				item.Cracked = true
-			}
+			item.Cracked = crackedSite[item.Genre[0]]
+			item.Genre[0] = mvSiteProcess(item.Genre[0])
 		}
 		result = append(result, &item)
 	}
@@ -497,40 +547,34 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		return
 	}
 
-	search := esClient.Search().Index(esIndex).Type(esType)
-	query := elastic.NewTermQuery("id", p.Id)
-	search = search.Query(query)
-	res, err := search.Do(p.ctx)
+	get := esClient.Get().Index(esIndex).Type(esType).Id(p.Id)
+	res, err := get.Do(p.ctx)
 	if err != nil {
-		return
-	}
-	if len(res.Hits.Hits) == 0 {
 		return
 	}
 
 	resource := Resource{}
-	hit := res.Hits.Hits[0]
-	err = json.Unmarshal(*hit.Source, &resource)
+	err = json.Unmarshal(*res.Source, &resource)
 	if err != nil {
 		return
 	}
 
 	if resource.Type == "imdb" {
 		filmIds := []string{p.Id}
-		btMap, _ := QueryTorrent(p.ctx, filmIds)
 		youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
 		videoMap, _ := QueryVideo(p.ctx, filmIds)
-		resource.BT = btMap[p.Id]
 		resource.Youtube = youtubeMap[p.Id]
 		resource.Video = videoMap[p.Id]
+
+		infohashs, _ := QueryTorrent(p.ctx, p.Id)
+		resource.BT, _ = multiGetBT(p.ctx, infohashs)
 
 		resource.Poster = imdbPoster(resource.Poster)
 		resource.SlateCover = imdbPoster(resource.SlateCover)
 	} else if resource.Type == "mv" {
 		if resource.Genre != nil && len(resource.Genre) > 0 {
-			if resource.Genre[0] == "youtube" {
-				resource.Cracked = true
-			}
+			resource.Cracked = crackedSite[resource.Genre[0]]
+			resource.Genre[0] = mvSiteProcess(resource.Genre[0])
 		}
 	}
 
@@ -551,25 +595,19 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 		return
 	}
 
-	search := esClient.Search().Index(esIndex).Type(esType)
-	query := elastic.NewBoolQuery()
+	mget := esClient.Mget()
 	for _, id := range p.Ids {
-		query = query.Should(elastic.NewTermQuery("id", id))
+		item := elastic.NewMultiGetItem().Index(esIndex).Type(esType).Id(id)
+		mget = mget.Add(item)
 	}
 
-	search = search.Query(query).Size(len(p.Ids))
-	res, err := search.Do(p.ctx)
+	res, err := mget.Do(p.ctx)
 	if err != nil {
 		return
 	}
-	if len(res.Hits.Hits) == 0 {
-		return
-	}
 
-	btMap, _ := QueryTorrent(p.ctx, p.Ids)
 	youtubeMap, _ := QueryYoutube(p.ctx, p.Ids)
-
-	for _, hit := range res.Hits.Hits {
+	for _, hit := range res.Docs {
 		item := Resource{}
 		err = json.Unmarshal(*hit.Source, &item)
 		if err != nil {
@@ -578,12 +616,10 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 
 		if item.Type == "mv" {
 			if item.Genre != nil && len(item.Genre) > 0 {
-				if item.Genre[0] == "youtube" {
-					item.Cracked = true
-				}
+				item.Cracked = crackedSite[item.Genre[0]]
+				item.Genre[0] = mvSiteProcess(item.Genre[0])
 			}
 		} else if item.Type == "imdb" {
-			item.BT = btMap[item.Id]
 			item.Youtube = youtubeMap[item.Id]
 			item.Poster = imdbPoster(item.Poster)
 			item.SlateCover = imdbPoster(item.SlateCover)

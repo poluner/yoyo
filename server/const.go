@@ -21,3 +21,9 @@ const (
 	esUrl    = "http://xxxxxx.com"
 	redisUrl = "redis://xxxxx"
 )
+
+var (
+	crackedSite = map[string]bool{
+		"youtube": true,
+	}
+)
