@@ -111,8 +111,8 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 
 	for _, hit := range res.Docs {
 		item := EsTorrent{}
-		err = json.Unmarshal(*hit.Source, &item)
-		if err != nil {
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
 			continue
 		}
 
@@ -313,8 +313,8 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 	}
 	for _, hit := range res.Hits.Hits {
 		item := EsTorrent{}
-		err = json.Unmarshal(*hit.Source, &item)
-		if err != nil {
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
 			continue
 		}
 
@@ -387,8 +387,8 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 	filmIds := make([]string, 0, p.Limit)
 	for _, hit := range res.Hits.Hits {
 		item := Resource{}
-		err = json.Unmarshal(*hit.Source, &item)
-		if err != nil {
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
 			continue
 		}
 
@@ -445,8 +445,8 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 	}
 	for _, hit := range res.Hits.Hits {
 		item := Resource{}
-		err = json.Unmarshal(*hit.Source, &item)
-		if err != nil {
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
 			continue
 		}
 
@@ -519,8 +519,8 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 	}
 	for _, hit := range res.Hits.Hits {
 		item := Resource{}
-		err = json.Unmarshal(*hit.Source, &item)
-		if err != nil {
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
 			continue
 		}
 
@@ -550,6 +550,9 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 	get := esClient.Get().Index(esIndex).Type(esType).Id(p.Id)
 	res, err := get.Do(p.ctx)
 	if err != nil {
+		return
+	}
+	if res.Source == nil {
 		return
 	}
 
@@ -608,9 +611,13 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 
 	youtubeMap, _ := QueryYoutube(p.ctx, p.Ids)
 	for _, hit := range res.Docs {
+		if hit.Source == nil {
+			continue
+		}
+
 		item := Resource{}
-		err = json.Unmarshal(*hit.Source, &item)
-		if err != nil {
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
 			continue
 		}
 
