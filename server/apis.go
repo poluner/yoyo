@@ -18,9 +18,10 @@ type suggestParam struct {
 }
 
 type searchParam struct {
-	Text   string `form:"text" binding:"required"`
-	Offset int    `form:"offset"`
-	Limit  int    `form:"limit"`
+	Text        string `form:"text" binding:"required"`
+	Offset      int    `form:"offset"`
+	Limit       int    `form:"limit"`
+	IgnoreFiles int    `form:"ignore_files"`
 
 	ctx    context.Context
 }

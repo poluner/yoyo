@@ -326,9 +326,11 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 			CollectedAt: JsonTime{item.CollectedAt},
 			Highlight:   hit.Highlight,
 		}
-		for _, f := range item.Files {
-			if !strings.HasPrefix(f.Path[0], "_____") {
-				t.Files = append(t.Files, f)
+		if p.IgnoreFiles == 0 {
+			for _, f := range item.Files {
+				if !strings.HasPrefix(f.Path[0], "_____") {
+					t.Files = append(t.Files, f)
+				}
 			}
 		}
 		result = append(result, &t)
