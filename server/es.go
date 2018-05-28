@@ -569,13 +569,18 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
 		videoMap, _ := QueryVideo(p.ctx, filmIds)
 		resource.Youtube = youtubeMap[p.Id]
-		resource.Video = videoMap[p.Id]
 
 		infohashs, _ := QueryTorrent(p.ctx, p.Id)
 		resource.BT, _ = multiGetBT(p.ctx, infohashs)
 
 		resource.Poster = imdbPoster(resource.Poster)
 		resource.SlateCover = imdbPoster(resource.SlateCover)
+
+		for _, v := range videoMap[p.Id] {
+			if v.Cover != resource.SlateCover {
+				resource.Video = append(resource.Video, v)
+			}
+		}
 	} else if resource.Type == "mv" {
 		if resource.Genre != nil && len(resource.Genre) > 0 {
 			resource.Cracked = crackedSite[resource.Genre[0]]
