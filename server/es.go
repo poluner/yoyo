@@ -9,6 +9,7 @@ import (
 	log "github.com/alecthomas/log4go"
 	"regexp"
 	"context"
+	"fmt"
 )
 
 var (
@@ -37,6 +38,7 @@ type Torrent struct {
 	Length      int                 `json:"length"`
 	Download    int                 `json:"download"`
 	CollectedAt JsonTime            `json:"collected_at"`
+	TorrentUrl  string              `json:"torrent_url,omitempty"`
 	Files       []FileItem          `json:"files,omitempty"`
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
@@ -121,6 +123,7 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 			Name:        item.Name,
 			Length:      item.Length,
 			Download:    item.Download,
+			TorrentUrl:  fmt.Sprintf("http://itorrents.org/torrent/%s.torrent", hit.Id),
 			CollectedAt: JsonTime{item.CollectedAt},
 		}
 		result = append(result, t)
@@ -323,6 +326,7 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 			Name:        item.Name,
 			Length:      item.Length,
 			Download:    item.Download,
+			TorrentUrl:  fmt.Sprintf("http://itorrents.org/torrent/%s.torrent", hit.Id),
 			CollectedAt: JsonTime{item.CollectedAt},
 			Highlight:   hit.Highlight,
 		}
