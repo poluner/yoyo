@@ -489,26 +489,17 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 	query := elastic.NewBoolQuery()
 	query = query.Must(elastic.NewTermQuery("type", "imdb"))
 
-	var hasCondition bool
-	conditionQuery := elastic.NewBoolQuery()
 	if p.Year != 0 {
-		conditionQuery.Should(elastic.NewTermQuery("year", p.Year))
-		hasCondition = true
+		query.Must(elastic.NewTermQuery("year", p.Year))
 	}
 	if p.Language != "" {
-		conditionQuery.Should(elastic.NewTermQuery("language", p.Language))
-		hasCondition = true
+		query.Must(elastic.NewTermQuery("language", p.Language))
 	}
 	if p.Country != "" {
-		conditionQuery.Should(elastic.NewTermQuery("country", p.Country))
-		hasCondition = true
+		query.Must(elastic.NewTermQuery("country", p.Country))
 	}
 	if p.Genre != "" {
-		conditionQuery.Should(elastic.NewTermQuery("genre", p.Genre))
-		hasCondition = true
-	}
-	if hasCondition {
-		query.Must(conditionQuery)
+		query.Must(elastic.NewTermQuery("genre", p.Genre))
 	}
 
 	search = search.Query(query)
