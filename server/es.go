@@ -503,6 +503,7 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 	}
 
 	if p.Sort == "release" {
+		query = query.Must(elastic.NewRangeQuery("release").Lt(time.Now()))
 		search = search.Query(query)
 		search = search.Sort("release", p.Ascend == 1)
 	} else {
