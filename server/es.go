@@ -502,13 +502,18 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 		query.Must(elastic.NewTermQuery("genre", p.Genre))
 	}
 
-	search = search.Query(query)
 	if p.Sort == "release" {
+		search = search.Query(query)
 		search = search.Sort("release", p.Ascend == 1)
-	} else if p.Sort == "rating_value" {
-		search = search.Sort("rating_value", p.Ascend == 1)
-	} else if p.Sort == "rating_count" {
-		search = search.Sort("rating_count", p.Ascend == 1)
+	} else {
+		functionQuery := elastic.NewFunctionScoreQuery().BoostMode("multiply")
+		rateValueFunc := elastic.NewFieldValueFactorFunction()
+		rateValueFunc = rateValueFunc.Field("rating_value").Missing(0.1)
+		rateCountFunc := elastic.NewFieldValueFactorFunction()
+		rateCountFunc = rateCountFunc.Field("rating_count").Missing(1)
+		functionQuery = functionQuery.Query(query).AddScoreFunc(rateValueFunc).AddScoreFunc(rateCountFunc)
+		search = search.Query(functionQuery)
+		search = search.Sort("_score", p.Ascend == 1)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
