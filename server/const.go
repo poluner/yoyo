@@ -20,10 +20,10 @@ const (
 	mysqlUrl = "xxxxx:xxxxx@tcp(10.1.1.154:3306)/link?charset=utf8mb4&parseTime=True&loc=Local"
 	esUrl    = "http://xxxxxx.com"
 	redisUrl = "redis://xxxxx"
+	s3Key    = "xxxxxxxx"
+	s3Pri    = `s3private.txt`
 
 	downloadUrl = "http://127.0.0.1:22002/swallow/torrent"
-	s3Key       = "xxxxxxxx"
-	s3Private   = `xxxx`
 )
 
 var (

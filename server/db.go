@@ -12,7 +12,7 @@ import (
 var (
 	dbConn *xgorm.DB
 	redisConn *redis.Client
-	signer = sign.NewURLSigner(s3Key, s3Private)
+	signer *sign.URLSigner
 )
 
 type TorrentDownload struct {
