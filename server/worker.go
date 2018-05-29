@@ -1,7 +1,6 @@
 package server
 
 import (
-	"io/ioutil"
 	"bytes"
 	"net/http"
 	"encoding/json"
@@ -32,11 +31,10 @@ func DownloadTorrentWorker() {
 		res, err := http.Post(downloadUrl, "application/json", bytes.NewBuffer(body))
 		if err != nil {
 			log.Error(err)
-		} else {
-			resBody, _ := ioutil.ReadAll(res.Body)
-			log.Info("%s", resBody)
 		}
 
-		res.Body.Close()
+		if res != nil {
+			res.Body.Close()
+		}
 	}
 }

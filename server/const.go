@@ -21,7 +21,7 @@ const (
 	esUrl    = "http://xxxxxx.com"
 	redisUrl = "redis://xxxxx"
 	s3Key    = "xxxxxxxx"
-	s3Pri    = `s3private.txt`
+	s3Pri    = "s3private.txt"
 
 	downloadUrl = "http://127.0.0.1:22002/swallow/torrent"
 )
