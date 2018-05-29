@@ -6,13 +6,26 @@ import (
 	"context"
 	"gopkg.in/redis.v5"
 	"github.com/LiuRoy/xgorm"
+	"github.com/aws/aws-sdk-go/service/cloudfront/sign"
 )
 
 var (
 	dbConn *xgorm.DB
 	redisConn *redis.Client
+	signer = sign.NewURLSigner(s3Key, s3Private)
 )
 
+type TorrentDownload struct {
+	Id          uint64    `gorm:"column:id;type:bigint;primary_key"`
+	InfoHash    string    `gorm:"column:infohash;type:varchar(40)"`
+	DownloadUrl string    `gorm:"column:download_url;type:varchar(300)"`
+	Kind        int8      `gorm:"column:kind;type:tinyint"`
+	CreatedAt   time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+}
+
+func (TorrentDownload) TableName() string {
+	return "torrent"
+}
 
 type IMDBTorrent struct {
 	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
@@ -138,6 +151,27 @@ func QueryVideo(ctx context.Context, filmIds []string) (videoMap map[string][]Vi
 			Duration: record.Duration,
 		})
 		videoMap[record.FilmId] = videos
+	}
+	return
+}
+
+func QueryTorrentUrl(ctx context.Context, infohashs []string) (downloadMap map[string]string, err error) {
+	downloadMap = make(map[string]string)
+	if infohashs == nil || len(infohashs) == 0 {
+		return
+	}
+
+	var records []TorrentDownload
+	err = dbConn.Where("infohash in (?)", infohashs).Find(ctx, &records).Error
+	if err != nil {
+		return
+	}
+
+	for _, record := range records {
+		if record.Kind == 1 {
+			signUrl, _:= signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour))
+			downloadMap[record.InfoHash] = signUrl
+		}
 	}
 	return
 }

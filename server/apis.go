@@ -174,6 +174,8 @@ func UpdateBTMetaInfo(c *gin.Context) {
 	}
 
 	param.ctx = c.Request.Context()
+	downloadChannel <- param.Infohash
+
 	err = param.UpdateTorrent()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

@@ -9,7 +9,6 @@ import (
 	log "github.com/alecthomas/log4go"
 	"regexp"
 	"context"
-	"fmt"
 )
 
 var (
@@ -111,6 +110,7 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 		return
 	}
 
+	downloadMap, _ := QueryTorrentUrl(ctx, infohashs)
 	for _, hit := range res.Docs {
 		item := EsTorrent{}
 		e := json.Unmarshal(*hit.Source, &item)
@@ -123,7 +123,7 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 			Name:        item.Name,
 			Length:      item.Length,
 			Download:    item.Download,
-			TorrentUrl:  fmt.Sprintf("http://itorrents.org/torrent/%s.torrent", hit.Id),
+			TorrentUrl:  downloadMap[hit.Id],
 			CollectedAt: JsonTime{item.CollectedAt},
 		}
 		result = append(result, t)
@@ -314,7 +314,10 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 	if total > maxResultWindow {
 		total = maxResultWindow
 	}
+
+	infohashs := make([]string, 0, p.Limit)
 	for _, hit := range res.Hits.Hits {
+		infohashs = append(infohashs, hit.Id)
 		item := EsTorrent{}
 		e := json.Unmarshal(*hit.Source, &item)
 		if e != nil {
@@ -326,7 +329,6 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 			Name:        item.Name,
 			Length:      item.Length,
 			Download:    item.Download,
-			TorrentUrl:  fmt.Sprintf("http://itorrents.org/torrent/%s.torrent", hit.Id),
 			CollectedAt: JsonTime{item.CollectedAt},
 			Highlight:   hit.Highlight,
 		}
@@ -338,6 +340,11 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 			}
 		}
 		result = append(result, &t)
+	}
+
+	downloadMap, _ := QueryTorrentUrl(p.ctx, infohashs)
+	for _, item := range result {
+		item.TorrentUrl = downloadMap[item.Infohash]
 	}
 	return
 }

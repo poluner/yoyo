@@ -60,4 +60,6 @@ func init() {
 
 	svc = kinesis.New(ses)
 	xray.AWS(svc.Client)
+
+	go DownloadTorrentWorker()
 }
