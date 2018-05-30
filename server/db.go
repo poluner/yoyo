@@ -169,7 +169,7 @@ func QueryTorrentUrl(ctx context.Context, infohashs []string) (downloadMap map[s
 
 	for _, record := range records {
 		if record.Kind == 1 {
-			signUrl, _:= signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour))
+			signUrl, _:= signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour * 24))
 			downloadMap[record.InfoHash] = signUrl
 		}
 	}
