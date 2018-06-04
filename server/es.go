@@ -9,7 +9,6 @@ import (
 	log "github.com/alecthomas/log4go"
 	"regexp"
 	"context"
-	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
 var (
@@ -202,7 +201,7 @@ func (p *suggestParam) phaseSuggest() (result []string, err error) {
 		field = "name"
 	}
 	suggester := elastic.NewPhraseSuggester("phase-suggest").
-		Text(p.Text).Field(field).Size(5).GramSize(3)
+		Text(p.Text).Field(field).Size(p.Size).GramSize(3)
 	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
@@ -237,7 +236,7 @@ func (p *suggestParam) Suggest() (result []string, err error) {
 		return
 	}
 
-	result, err = p.phaseSuggest()
+	result, err = p.completionSuggest()
 	if err != nil || len(result) > 0 {
 		return
 	}
