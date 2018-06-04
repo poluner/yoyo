@@ -167,7 +167,7 @@ func (p *suggestParam) termSuggest() (result []string, err error) {
 		field = "name"
 	}
 	suggester := elastic.NewTermSuggester("term-suggest").
-		Text(p.Text).Field(field).Size(1).SuggestMode("popular")
+		Text(p.Text).Field(field).Size(p.Size).SuggestMode("popular")
 	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
@@ -180,12 +180,12 @@ func (p *suggestParam) termSuggest() (result []string, err error) {
 	}
 
 	for _, suggest := range suggestResult {
-		if len(result) >= p.Size {
-			break
-		}
-
 		if suggest.Options != nil && len(suggest.Options) > 0 {
-			result = append(result, suggest.Options[0].Text)
+			phrase := make([]string, 0, len(suggest.Options))
+			for _, item := range suggest.Options {
+				phrase = append(phrase, item.Text)
+			}
+			result = append(result, strings.Join(phrase, " "))
 		}
 	}
 
