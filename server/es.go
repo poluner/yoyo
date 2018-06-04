@@ -9,6 +9,7 @@ import (
 	log "github.com/alecthomas/log4go"
 	"regexp"
 	"context"
+	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
 var (
@@ -159,7 +160,7 @@ func (p *suggestParam) completionSuggest() (result []string, err error) {
 }
 
 func (p *suggestParam) termSuggest() (result []string, err error) {
-	result = make([]string, 0, 1)
+	result = make([]string, 0, p.Size)
 	search := esClient.Search().Index(esIndex).Type(esType)
 
 	field := "title"
@@ -167,7 +168,7 @@ func (p *suggestParam) termSuggest() (result []string, err error) {
 		field = "name"
 	}
 	suggester := elastic.NewTermSuggester("term-suggest").
-		Text(p.Text).Field(field).Size(p.Size).SuggestMode("popular")
+		Text(p.Text).Field(field).Size(3).SuggestMode("popular")
 	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
@@ -180,12 +181,46 @@ func (p *suggestParam) termSuggest() (result []string, err error) {
 	}
 
 	for _, suggest := range suggestResult {
-		if suggest.Options != nil && len(suggest.Options) > 0 {
-			phrase := make([]string, 0, len(suggest.Options))
-			for _, item := range suggest.Options {
-				phrase = append(phrase, item.Text)
-			}
-			result = append(result, strings.Join(phrase, " "))
+		if len(result) >= p.Size {
+			break
+		}
+
+		for _, item := range suggest.Options {
+			result = append(result, item.Text)
+		}
+	}
+
+	return
+}
+
+func (p *suggestParam) phaseSuggest() (result []string, err error) {
+	result = make([]string, 0, p.Size)
+	search := esClient.Search().Index(esIndex).Type(esType)
+
+	field := "title"
+	if p.Type == "torrent" {
+		field = "name"
+	}
+	suggester := elastic.NewPhraseSuggester("phase-suggest").
+		Text(p.Text).Field(field).Size(5).GramSize(3)
+	search = search.Suggester(suggester)
+	searchResult, err := search.Do(p.ctx)
+	if err != nil {
+		return
+	}
+
+	suggestResult := searchResult.Suggest["phase-suggest"]
+	if suggestResult == nil || len(suggestResult) == 0 {
+		return
+	}
+
+	for _, suggest := range suggestResult {
+		if len(result) >= p.Size {
+			break
+		}
+
+		for _, item := range suggest.Options {
+			result = append(result, item.Text)
 		}
 	}
 
@@ -202,7 +237,7 @@ func (p *suggestParam) Suggest() (result []string, err error) {
 		return
 	}
 
-	result, err = p.completionSuggest()
+	result, err = p.phaseSuggest()
 	if err != nil || len(result) > 0 {
 		return
 	}
