@@ -167,7 +167,7 @@ func (p *suggestParam) termSuggest() (result []string, err error) {
 		field = "name"
 	}
 	suggester := elastic.NewTermSuggester("term-suggest").
-		Text(p.Text).Field(field).Size(3).SuggestMode("popular")
+		Text(p.Text).Field(field).Size(1).SuggestMode("popular")
 	search = search.Suggester(suggester)
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
