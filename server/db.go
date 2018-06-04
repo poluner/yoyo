@@ -6,13 +6,11 @@ import (
 	"context"
 	"gopkg.in/redis.v5"
 	"github.com/LiuRoy/xgorm"
-	"github.com/aws/aws-sdk-go/service/cloudfront/sign"
 )
 
 var (
 	dbConn *xgorm.DB
 	redisConn *redis.Client
-	signer *sign.URLSigner
 )
 
 type TorrentDownload struct {
@@ -169,8 +167,7 @@ func QueryTorrentUrl(ctx context.Context, infohashs []string) (downloadMap map[s
 
 	for _, record := range records {
 		if record.Kind == 1 {
-			signUrl, _:= signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour * 24))
-			downloadMap[record.InfoHash] = signUrl
+			downloadMap[record.InfoHash] = record.DownloadUrl
 		}
 	}
 	return

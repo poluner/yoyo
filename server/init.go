@@ -14,7 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	_ "github.com/LiuRoy/xgorm/dialects/mysql"
-	"github.com/aws/aws-sdk-go/service/cloudfront/sign"
 )
 
 
@@ -61,12 +60,6 @@ func init() {
 
 	svc = kinesis.New(ses)
 	xray.AWS(svc.Client)
-
-	privateKey, err := sign.LoadPEMPrivKeyFile(s3Pri)
-	if err != nil {
-		panic(err)
-	}
-	signer = sign.NewURLSigner(s3Key, privateKey)
 
 	go DownloadTorrentWorker()
 }
