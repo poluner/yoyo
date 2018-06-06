@@ -6,7 +6,6 @@ import (
 	"github.com/olivere/elastic"
 	"strings"
 	"time"
-	log "github.com/alecthomas/log4go"
 	"regexp"
 	"context"
 )
@@ -245,64 +244,6 @@ func (p *suggestParam) Suggest() (result []string, err error) {
 	return
 }
 
-func (p *updateParam)UpdateTorrent() (err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "es-update")
-	defer seg.Close(err)
-
-	_, err = esClient.Get().Index(esIndex).Type(esType).Id(p.Infohash).Do(p.ctx)
-
-	item := EsTorrent{}
-	if err != nil {
-		// not found
-		err = nil
-		if p.Meta.Name != "" {
-			item.Name = p.Meta.Name
-			item.Name2 = item.Name
-			item.Download = p.Hot
-			item.CollectedAt = time.Now()
-			item.Type = "torrent"
-
-			for _, fileItem := range p.Meta.Files {
-				if !strings.HasPrefix(fileItem.Path[0], "_____") {
-					item.Files = append(item.Files, fileItem)
-				}
-
-				if fileItem.Path[0] == "Ultra XVid Codec Pack.exe " {
-					return
-				}
-			}
-
-			var total int
-			for _, file := range p.Meta.Files {
-				total += file.Length
-			}
-			if total != 0 {
-				item.Length = total
-			} else {
-				item.Length = p.Meta.Length
-			}
-
-			_, err = esClient.Index().Index(esIndex).Type(
-				esType).Id(p.Infohash).BodyJson(item).Do(p.ctx)
-			log.Info(p.Infohash)
-			log.Info("%+v", item)
-		}
-	} else {
-		// found
-		if p.Hot != 0 {
-			script := elastic.NewScript("ctx._source.hot=params.hot;ctx._source.collected_at=params.collected_at").Params(
-				map[string]interface{}{
-					"hot":          p.Hot,
-					"collected_at": time.Now(),
-				},
-			)
-			_, err = esClient.Update().Index(esIndex).Type(esType).Id(p.Infohash).Script(script).Do(p.ctx)
-		}
-	}
-
-	return
-}
-
 func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "torrent-search")
 	defer seg.Close(err)
@@ -401,7 +342,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("title", input).Boost(2.0),
+			elastic.NewMatchQuery("title", input).Boost(100.0),
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
@@ -410,9 +351,9 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 
 		recommendFunction := elastic.NewFieldValueFactorFunction()
 		recommendFunction = recommendFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(2.0)
-		yearFunction := elastic.NewGaussDecayFunction().FieldName("year")
-		yearFunction = yearFunction.Origin(time.Now().Year()).Offset(10).Scale(60).Decay(0.5).Weight(0.1)
-		query = query.AddScoreFunc(recommendFunction).AddScoreFunc(yearFunction)
+		ratingCountFunction := elastic.NewFieldValueFactorFunction()
+		ratingCountFunction = ratingCountFunction.Field("rating_count").Modifier("ln2p").Missing(0).Weight(2)
+		query = query.AddScoreFunc(recommendFunction).AddScoreFunc(ratingCountFunction)
 
 		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(query).Highlight(highlight)

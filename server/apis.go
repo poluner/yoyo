@@ -245,7 +245,6 @@ func SearchMovie(c *gin.Context) {
 	})
 }
 
-
 func SearchMV(c *gin.Context) {
 	var (
 		err   error
@@ -411,5 +410,63 @@ func MGetResource(c *gin.Context) {
 		"result": "ok",
 		"code":   noError,
 		"data":   result,
+	})
+}
+
+func UploadTorrent(c *gin.Context) {
+	ctx := c.Request.Context()
+	infohash := c.PostForm("infohash")
+	if infohash != "" {
+		var record TorrentDownload
+		if !dbConn.Where("infohash = ?", infohash).First(
+			ctx, &record).RecordNotFound() {
+			c.JSON(http.StatusOK, gin.H{
+				"result": "torrent exist",
+				"code":   noError,
+			})
+			return
+		}
+	}
+
+	torrent, err := c.FormFile("torrent")
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{
+			"result": "no torrent file",
+			"code": UploadErr,
+		})
+		return
+	}
+
+	torrentFile, err := torrent.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "open torrent error",
+			"code": torrent,
+		})
+		return
+	}
+
+	data := make([]byte, 1048576)
+	n, err := torrentFile.Read(data)
+	if n > int(1048576) {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "torrent size too large",
+			"code": UploadErr,
+		})
+		return
+	}
+
+	err = Upload(ctx, infohash, data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "upload s3 failed",
+			"code": UploadErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code": noError,
 	})
 }

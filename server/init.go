@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	_ "github.com/LiuRoy/xgorm/dialects/mysql"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 
@@ -57,6 +58,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	uploader = s3manager.NewUploader(ses)
 
 	svc = kinesis.New(ses)
 	xray.AWS(svc.Client)

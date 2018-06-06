@@ -10,10 +10,12 @@ const (
 	noError       = 0
 	internalErr   = 100
 	paramsInvalid = 200
+	UploadErr     = 300
 
 	xrayDaemonAddress = "127.0.0.1:3000"
 	kinesisRegion     = "ap-south-1"
 	kinesisStream     = "SeverReportProduct"
+
 
 	maxResultWindow = 10000
 
@@ -28,4 +30,6 @@ var (
 	crackedSite = map[string]bool{
 		"youtube": true,
 	}
+
+	s3bucket          = "torrenthub"
 )
