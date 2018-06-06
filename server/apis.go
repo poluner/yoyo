@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"context"
+	"fmt"
 )
 
 type suggestParam struct {
@@ -465,6 +466,12 @@ func UploadTorrent(c *gin.Context) {
 		return
 	}
 
+	record := TorrentDownload{
+		InfoHash: infohash,
+		DownloadUrl: fmt.Sprintf("http://d1saub1vswkfmx.cloudfront.net/%s.torrent", infohash),
+		Kind: 1,
+	}
+	dbConn.Create(ctx, &record)
 	c.JSON(http.StatusOK, gin.H{
 		"result": "ok",
 		"code": noError,

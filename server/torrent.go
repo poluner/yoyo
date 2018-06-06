@@ -11,6 +11,7 @@ import (
 	log "github.com/alecthomas/log4go"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"fmt"
 )
 
 var (
@@ -146,8 +147,10 @@ func Upload(ctx context.Context, infohash string, data []byte) (err error) {
 		}
 	}
 
+	key := fmt.Sprintf("%s.torrent", infohash)
 	_, err = uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: &s3bucket,
+		Key: &key,
 		Body:   bytes.NewReader(data),
 	})
 	return
