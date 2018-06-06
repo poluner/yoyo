@@ -457,7 +457,7 @@ func UploadTorrent(c *gin.Context) {
 		return
 	}
 
-	err = Upload(ctx, infohash, data)
+	err = Upload(ctx, infohash, data[:n])
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": "upload s3 failed",

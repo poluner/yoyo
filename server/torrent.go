@@ -12,6 +12,8 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"fmt"
+	"crypto/sha1"
+	"encoding/hex"
 )
 
 var (
@@ -53,7 +55,7 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 	return
 }
 
-func parseTorrent(data []byte) (meta metaInfo, err error) {
+func parseTorrent(data []byte) (meta metaInfo, infohash string, err error) {
 	torrent, err := dht.Decode(data)
 	if err != nil {
 		return
@@ -65,6 +67,12 @@ func parseTorrent(data []byte) (meta metaInfo, err error) {
 		err = errors.New("no info key")
 		return
 	}
+
+	infoStr, err := dht.Encode(info)
+	if err != nil {
+		return
+	}
+	infohash = hex.EncodeToString(sha1.Sum([]byte(infoStr))[:])
 
 	infoMap := info.(map[string]interface{})
 	name, ok := infoMap["name"]
@@ -135,7 +143,8 @@ func Upload(ctx context.Context, infohash string, data []byte) (err error) {
 	_, e := esClient.Get().Index(esIndex).Type(esType).Id(infohash).Do(ctx)
 	if e != nil {
 		// 解析种子并把种子放入es中
-		meta, ee := parseTorrent(data)
+		meta, infohash, ee := parseTorrent(data)
+		log.Info(infohash)
 		if ee != nil {
 			err  = ee
 			return
