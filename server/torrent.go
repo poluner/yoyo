@@ -12,8 +12,6 @@ import (
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"fmt"
-	"crypto/sha1"
-	"encoding/hex"
 )
 
 var (
@@ -67,12 +65,6 @@ func parseTorrent(data []byte) (meta metaInfo, infohash string, err error) {
 		err = errors.New("no info key")
 		return
 	}
-
-	infoStr, err := dht.Encode(info)
-	if err != nil {
-		return
-	}
-	infohash = hex.EncodeToString(sha1.Sum([]byte(infoStr))[:])
 
 	infoMap := info.(map[string]interface{})
 	name, ok := infoMap["name"]

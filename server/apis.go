@@ -427,6 +427,12 @@ func UploadTorrent(c *gin.Context) {
 			})
 			return
 		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "infohash empty",
+			"code": paramsInvalid,
+		})
+		return
 	}
 
 	torrent, err := c.FormFile("torrent")
@@ -449,7 +455,7 @@ func UploadTorrent(c *gin.Context) {
 
 	data := make([]byte, 1048576)
 	n, err := torrentFile.Read(data)
-	if n > int(1048576) {
+	if n >= int(1048576) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": "torrent size too large",
 			"code": UploadErr,
