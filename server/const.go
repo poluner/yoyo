@@ -23,7 +23,7 @@ const (
 	esUrl    = "http://xxxxxx.com"
 	redisUrl = "redis://xxxxx"
 
-	downloadUrl = "http://127.0.0.1:22002/swallow/torrent"
+	downloadUrl = "http://api.watchnow.n0909.com/swallow/torrent"
 )
 
 var (

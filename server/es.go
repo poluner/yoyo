@@ -342,17 +342,17 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("title", input).Boost(100.0),
+			elastic.NewMatchQuery("title", input).Boost(10.0),
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
-		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
+		query := elastic.NewFunctionScoreQuery().BoostMode("sum")
 		query = query.Query(boolQuery)
 
 		recommendFunction := elastic.NewFieldValueFactorFunction()
 		recommendFunction = recommendFunction.Field("recommend").Modifier("ln2p").Missing(0).Weight(2.0)
 		ratingCountFunction := elastic.NewFieldValueFactorFunction()
-		ratingCountFunction = ratingCountFunction.Field("rating_count").Modifier("ln2p").Missing(0).Weight(2)
+		ratingCountFunction = ratingCountFunction.Field("rating_count").Modifier("ln2p").Missing(0).Weight(2.0)
 		query = query.AddScoreFunc(recommendFunction).AddScoreFunc(ratingCountFunction)
 
 		highlight := elastic.NewHighlight().Field("title")
