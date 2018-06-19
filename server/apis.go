@@ -19,7 +19,8 @@ type suggestParam struct {
 }
 
 type searchParam struct {
-	Text        string `form:"text" binding:"required"`
+	Text        string `form:"text"`
+	Singer      string `form:"singer"`   // 歌手搜索时使用
 	Offset      int    `form:"offset"`
 	Limit       int    `form:"limit"`
 	IgnoreFiles int    `form:"ignore_files"`
@@ -179,7 +180,7 @@ func UpdateBTMetaInfo(c *gin.Context) {
 
 	err = param.UpdateTorrent()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"result": err,
 			"code":   paramsInvalid,
 		})
@@ -322,7 +323,7 @@ func DiscoverMovie(c *gin.Context) {
 		param.Sort = "rating_value"
 	}
 	param.ctx = c.Request.Context()
-	total, result, err := param.Discover()
+	total, result, err := param.DiscoverMovie()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -381,7 +382,7 @@ func GetResource(c *gin.Context) {
 	})
 }
 
-func MGetResource(c *gin.Context) {
+func GetResources(c *gin.Context) {
 	var (
 		err   error
 		param mgetParam
@@ -397,7 +398,7 @@ func MGetResource(c *gin.Context) {
 	}
 
 	param.ctx = c.Request.Context()
-	result, err := param.MGet()
+	result, err := param.GetResources()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -481,5 +482,258 @@ func UploadTorrent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"result": "ok",
 		"code": noError,
+	})
+}
+
+func SearchSong(c *gin.Context) {
+	var (
+		err   error
+		param searchParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	param.ctx = c.Request.Context()
+	total, result, err := param.SearchSong()
+
+	event := KEvent{
+		EventClass: 1,
+		EventName:  "song_search",
+		Attributes: []string{"search", "song"},
+		ExtData: map[string]string{
+			"text":    param.Text,
+			"offset":  strconv.Itoa(param.Offset),
+			"limit":   strconv.Itoa(param.Limit),
+			"total":   strconv.Itoa(int(total)),
+			"length":  strconv.Itoa(len(result)),
+			"version": "1.0",
+		},
+		RequestHeader: c.Request.Header,
+		CreateTime:    time.Now(),
+	}
+	event.Push(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"total":  total,
+		"data":   result,
+	})
+}
+
+func SearchAlbum(c *gin.Context) {
+	var (
+		err   error
+		param searchParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	param.ctx = c.Request.Context()
+	total, result, err := param.SearchAlbum()
+
+	event := KEvent{
+		EventClass: 1,
+		EventName:  "album_search",
+		Attributes: []string{"search", "album"},
+		ExtData: map[string]string{
+			"text":    param.Text,
+			"offset":  strconv.Itoa(param.Offset),
+			"limit":   strconv.Itoa(param.Limit),
+			"total":   strconv.Itoa(int(total)),
+			"length":  strconv.Itoa(len(result)),
+			"version": "1.0",
+		},
+		RequestHeader: c.Request.Header,
+		CreateTime:    time.Now(),
+	}
+	event.Push(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"total":  total,
+		"data":   result,
+	})
+}
+
+func DiscoverAlbum(c *gin.Context) {
+	var (
+		err   error
+		param discoverParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	param.ctx = c.Request.Context()
+	total, result, err := param.DiscoverAlbum()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"total":  total,
+		"data":   result,
+	})
+}
+
+func GetAlbum(c *gin.Context) {
+	var (
+		err   error
+		param getParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetAlbum()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	if result == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "no resource",
+			"code":   noError,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+func GetAlbums(c *gin.Context) {
+	var (
+		err   error
+		param mgetParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetAlbums()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+
+func GetSongs(c *gin.Context) {
+	var (
+		err   error
+		param mgetParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetSongs()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
 	})
 }

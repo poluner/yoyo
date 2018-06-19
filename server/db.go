@@ -4,14 +4,8 @@ import (
 	"fmt"
 	"time"
 	"context"
-	"gopkg.in/redis.v5"
-	"github.com/LiuRoy/xgorm"
 )
 
-var (
-	dbConn *xgorm.DB
-	redisConn *redis.Client
-)
 
 type TorrentDownload struct {
 	Id          uint64    `gorm:"column:id;type:bigint;primary_key"`

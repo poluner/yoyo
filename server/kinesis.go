@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-var (
-	svc *kinesis.Kinesis
-)
-
 type KEvent struct {
 	EventClass    int8              `json:"event_class"`
 	EventName     string            `json:"event_name"`

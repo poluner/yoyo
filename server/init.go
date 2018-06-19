@@ -17,6 +17,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+var (
+	dbConn *xgorm.DB
+	redisConn *redis.Client
+	esClient *elastic.Client
+	svc *kinesis.Kinesis
+	uploader *s3manager.Uploader
+)
+
 
 func init() {
 	prometheus.MustRegister(ResponseCounter)

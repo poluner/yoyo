@@ -2,44 +2,17 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-xray-sdk-go/xray"
-	"github.com/olivere/elastic"
 	"strings"
 	"time"
 	"regexp"
 	"context"
+	"github.com/aws/aws-xray-sdk-go/xray"
+	"github.com/olivere/elastic"
 )
 
 var (
-	esClient *elastic.Client
 	sizeFormatPattern = regexp.MustCompile(`\._V1.*\.jpg$`)
 )
-
-type FileItem struct {
-	Path   []string `json:"path"`
-	Length int      `json:"length"`
-}
-
-type EsTorrent struct {
-	Name        string     `json:"name"`
-	Name2       string     `json:"name2"`
-	Type        string     `json:"type,omitempty"`
-	Download    int        `json:"hot"`
-	Length      int        `json:"length"`
-	CollectedAt time.Time  `json:"collected_at"`
-	Files       []FileItem `json:"files,omitempty"`
-}
-
-type Torrent struct {
-	Infohash    string              `json:"infohash"`
-	Name        string              `json:"name"`
-	Length      int                 `json:"length"`
-	Download    int                 `json:"download"`
-	CollectedAt JsonTime            `json:"collected_at"`
-	TorrentUrl  string              `json:"torrent_url,omitempty"`
-	Files       []FileItem          `json:"files,omitempty"`
-	Highlight   map[string][]string `json:"highlight,omitempty"`
-}
 
 // mv和imdb类型
 type Resource struct {
@@ -100,7 +73,7 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 
 	mget := esClient.Mget()
 	for _, id := range infohashs {
-		item := elastic.NewMultiGetItem().Index(esIndex).Type(esType).Id(id)
+		item := elastic.NewMultiGetItem().Index(resourceIndex).Type(resourceType).Id(id)
 		mget = mget.Add(item)
 	}
 
@@ -130,200 +103,6 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 	return
 }
 
-func (p *suggestParam) completionSuggest() (result []string, err error) {
-	result = make([]string, 0, p.Size)
-	search := esClient.Search().Index(esIndex).Type(esType)
-
-	field := "name2"
-	if p.Type == "imdb" {
-		field = "title2"
-	} else if p.Type == "mv" {
-		field = "title3"
-	}
-	suggester := elastic.NewCompletionSuggester("completion-suggest").
-		Text(p.Text).Field(field).SkipDuplicates(true).Size(p.Size)
-	search = search.Suggester(suggester)
-	searchResult, err := search.Do(p.ctx)
-	if err != nil {
-		return
-	}
-
-	suggestResult := searchResult.Suggest["completion-suggest"]
-	for _, suggest := range suggestResult {
-		for _, option := range suggest.Options {
-			result = append(result, option.Text)
-		}
-	}
-	return
-}
-
-func (p *suggestParam) termSuggest() (result []string, err error) {
-	result = make([]string, 0, p.Size)
-	search := esClient.Search().Index(esIndex).Type(esType)
-
-	field := "title"
-	if p.Type == "torrent" {
-		field = "name"
-	}
-	suggester := elastic.NewTermSuggester("term-suggest").
-		Text(p.Text).Field(field).Size(1).SuggestMode("popular")
-	search = search.Suggester(suggester)
-	searchResult, err := search.Do(p.ctx)
-	if err != nil {
-		return
-	}
-
-	suggestResult := searchResult.Suggest["term-suggest"]
-	if suggestResult == nil || len(suggestResult) == 0 {
-		return
-	}
-
-	for _, suggest := range suggestResult {
-		if len(result) >= p.Size {
-			break
-		}
-
-		for _, item := range suggest.Options {
-			result = append(result, item.Text)
-		}
-	}
-
-	return
-}
-
-func (p *suggestParam) phaseSuggest() (result []string, err error) {
-	result = make([]string, 0, p.Size)
-	search := esClient.Search().Index(esIndex).Type(esType)
-
-	field := "title"
-	if p.Type == "torrent" {
-		field = "name"
-	}
-	suggester := elastic.NewPhraseSuggester("phase-suggest").
-		Text(p.Text).Field(field).Size(p.Size).GramSize(3)
-	search = search.Suggester(suggester)
-	searchResult, err := search.Do(p.ctx)
-	if err != nil {
-		return
-	}
-
-	suggestResult := searchResult.Suggest["phase-suggest"]
-	if suggestResult == nil || len(suggestResult) == 0 {
-		return
-	}
-
-	for _, suggest := range suggestResult {
-		if len(result) >= p.Size {
-			break
-		}
-
-		for _, item := range suggest.Options {
-			result = append(result, item.Text)
-		}
-	}
-
-	return
-}
-
-func (p *suggestParam) Suggest() (result []string, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "es-suggest")
-	defer seg.Close(err)
-
-	input := strings.TrimSpace(p.Text)
-	if input == "" {
-		result = make([]string, 0)
-		return
-	}
-
-	result, err = p.completionSuggest()
-	if err != nil || len(result) > 0 {
-		return
-	}
-
-	result, err = p.termSuggest()
-	return
-}
-
-func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "torrent-search")
-	defer seg.Close(err)
-
-	result = make([]*Torrent, 0, p.Limit)
-	if p.Offset + p.Limit > maxResultWindow {
-		return
-	}
-
-	input := strings.TrimSpace(p.Text)
-	search := esClient.Search().Index(esIndex).Type(esType)
-	if input == "" {
-		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "torrent"))
-		search = search.Query(query)
-	} else {
-		boolQuery := elastic.NewBoolQuery()
-		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "torrent"))
-		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("name", input).Boost(1.0),))
-		//elastic.NewMatchQuery("files.path", input).Boost(1.0)))
-
-		query := elastic.NewFunctionScoreQuery().BoostMode("multiply")
-		query = query.Query(boolQuery)
-
-		hotFunction := elastic.NewFieldValueFactorFunction()
-		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(1).Weight(0.1)
-		collectFunction := elastic.NewGaussDecayFunction().FieldName("collected_at")
-		collectFunction = collectFunction.Origin(time.Now()).Offset("30d").Scale("365d").Decay(0.5).Weight(0.1)
-		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
-
-		highlight := elastic.NewHighlight().Field("name")
-		search = search.Query(query).Highlight(highlight)
-		search = search.Sort("_score", false)
-	}
-
-	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
-	if err != nil {
-		return
-	}
-
-	total = res.TotalHits()
-	if total > maxResultWindow {
-		total = maxResultWindow
-	}
-
-	infohashs := make([]string, 0, p.Limit)
-	for _, hit := range res.Hits.Hits {
-		infohashs = append(infohashs, hit.Id)
-		item := EsTorrent{}
-		e := json.Unmarshal(*hit.Source, &item)
-		if e != nil {
-			continue
-		}
-
-		t := Torrent{
-			Infohash:    hit.Id,
-			Name:        item.Name,
-			Length:      item.Length,
-			Download:    item.Download,
-			CollectedAt: JsonTime{item.CollectedAt},
-			Highlight:   hit.Highlight,
-		}
-		if p.IgnoreFiles == 0 {
-			for _, f := range item.Files {
-				if !strings.HasPrefix(f.Path[0], "_____") {
-					t.Files = append(t.Files, f)
-				}
-			}
-		}
-		result = append(result, &t)
-	}
-
-	downloadMap, _ := QueryTorrentUrl(p.ctx, infohashs)
-	for _, item := range result {
-		item.TorrentUrl = downloadMap[item.Infohash]
-	}
-	return
-}
-
 func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-search")
 	defer seg.Close(err)
@@ -334,7 +113,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 	}
 
 	input := strings.TrimSpace(p.Text)
-	search := esClient.Search().Index(esIndex).Type(esType)
+	search := esClient.Search().Index(resourceIndex).Type(resourceType)
 	if input == "" {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "imdb"))
 		search = search.Query(query)
@@ -406,7 +185,7 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 	}
 
 	input := strings.TrimSpace(p.Text)
-	search := esClient.Search().Index(esIndex).Type(esType)
+	search := esClient.Search().Index(resourceIndex).Type(resourceType)
 	if input == "" {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "mv"))
 		search = search.Query(query)
@@ -450,7 +229,7 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 	return
 }
 
-func (p *discoverParam) Discover() (total int64, result []*Resource, err error) {
+func (p *discoverParam) DiscoverMovie() (total int64, result []*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-discover")
 	defer seg.Close(err)
 
@@ -459,7 +238,7 @@ func (p *discoverParam) Discover() (total int64, result []*Resource, err error) 
 		return
 	}
 
-	search := esClient.Search().Index(esIndex).Type(esType)
+	search := esClient.Search().Index(resourceIndex).Type(resourceType)
 
 	query := elastic.NewBoolQuery()
 	query = query.Must(elastic.NewTermQuery("type", "imdb"))
@@ -532,7 +311,7 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		return
 	}
 
-	get := esClient.Get().Index(esIndex).Type(esType).Id(p.Id)
+	get := esClient.Get().Index(resourceIndex).Type(resourceType).Id(p.Id)
 	res, err := get.Do(p.ctx)
 	if err != nil {
 		return
@@ -579,7 +358,7 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 	return
 }
 
-func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
+func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "resource-mget")
 	defer seg.Close(err)
 
@@ -590,7 +369,7 @@ func (p *mgetParam) MGet() (result map[string]*Resource, err error) {
 
 	mget := esClient.Mget()
 	for _, id := range p.Ids {
-		item := elastic.NewMultiGetItem().Index(esIndex).Type(esType).Id(id)
+		item := elastic.NewMultiGetItem().Index(resourceIndex).Type(resourceType).Id(id)
 		mget = mget.Add(item)
 	}
 
