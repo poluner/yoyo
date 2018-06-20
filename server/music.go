@@ -51,7 +51,7 @@ type Album struct {
 	SingerId   []string             `json:"singer_id,omitempty"`
 	SongId     []string             `json:"song_id"`
 	SongCount  int                  `json:"song_count"`
-	Songs      []*Song              `json:"songs"`
+	Songs      []*Song              `json:"songs,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
@@ -80,7 +80,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, err error) {
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "song"))
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("singer_id", p.Singer))
 		search = search.Query(boolQuery)
-		search = search.Sort("title.keyword", false)
+		search = search.Sort("title.keyword", true)
 	} else {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "song"))
 		search = search.Query(query)
@@ -136,7 +136,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "album"))
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("singer_id", p.Singer))
 		search = search.Query(boolQuery)
-		search = search.Sort("title.keyword", false)
+		search = search.Sort("title.keyword", true)
 	} else {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "album"))
 		search = search.Query(query)
@@ -179,8 +179,8 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 
 	query := elastic.NewBoolQuery()
 	query = query.Must(elastic.NewBoolQuery().
-		Must(elastic.NewTermQuery("type", "playlist")).
-		Must(elastic.NewTermQuery("type", "album")))
+		Should(elastic.NewTermQuery("type", "playlist")).
+		Should(elastic.NewTermQuery("type", "album")))
 
 	if p.Language != "" {
 		query.Must(elastic.NewTermQuery("language", p.Language))
