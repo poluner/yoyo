@@ -5,7 +5,6 @@ import (
 	"strings"
 	"encoding/json"
 	"github.com/olivere/elastic"
-	log "github.com/alecthomas/log4go"
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"fmt"
 )
@@ -248,7 +247,6 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 
 		songs := make([]*Song, 0, len(album.SongId))
 		res, e := mget.Do(p.ctx)
-		log.Error(e)
 		if e == nil {
 			for _, hit := range res.Docs {
 				if hit.Source == nil {
@@ -260,11 +258,9 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 				if e != nil {
 					continue
 				}
-				log.Info("%+v", item)
 				songs = append(songs, &item)
 			}
 		}
-		log.Info(songs)
 		album.Songs = songs
 	}
 
