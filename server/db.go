@@ -212,11 +212,12 @@ func QuerySongUrl(ctx context.Context, songId []string) (downloadMap map[string]
 		bitMap, ok := downloadMap[record.SongId]
 		if ok {
 			bitMap[record.BitRate] = signUrl
+			downloadMap[record.SongId] = bitMap
 		} else {
 			bitMap := make(map[string]string)
 			bitMap[record.BitRate] = signUrl
+			downloadMap[record.SongId] = bitMap
 		}
-		downloadMap[record.SongId] = bitMap
 	}
 	return
 }
