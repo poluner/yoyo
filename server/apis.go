@@ -8,6 +8,7 @@ import (
 	"time"
 	"context"
 	"fmt"
+	"strings"
 )
 
 type suggestParam struct {
@@ -531,12 +532,24 @@ func SearchSong(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	obj := gin.H{
 		"result": "ok",
 		"code":   noError,
 		"total":  total,
 		"data":   result,
-	})
+	}
+
+	param.Limit = 1
+	_, singers, _ := param.SearchSinger()
+	if len(singers) != 0 {
+		singer := singers[0]
+		input := strings.TrimSpace(param.Text)
+		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
+			obj["singer"] = singer
+		}
+	}
+
+	c.JSON(http.StatusOK, obj)
 }
 
 func SearchAlbum(c *gin.Context) {

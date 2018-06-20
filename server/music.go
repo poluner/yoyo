@@ -78,8 +78,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, err error) {
 	} else if p.Singer != "" {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "song"))
-		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewTermQuery("singer_id", p.Singer)))
+		boolQuery = boolQuery.Must(elastic.NewTermQuery("singer_id", p.Singer))
 		search = search.Query(boolQuery)
 		search = search.Sort("title.keyword", false)
 	} else {
@@ -125,8 +124,8 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 	if input != "" {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().
-			Must(elastic.NewTermQuery("type", "playlist")).
-				Must(elastic.NewTermQuery("type", "album")))
+			Should(elastic.NewTermQuery("type", "playlist")).
+			Should(elastic.NewTermQuery("type", "album")))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
 			elastic.NewMatchQuery("title", input)))
 		highlight := elastic.NewHighlight().Field("title")
@@ -135,8 +134,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 	} else if p.Singer != "" {
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "album"))
-		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewTermQuery("singer_id", p.Singer)))
+		boolQuery = boolQuery.Must(elastic.NewTermQuery("singer_id", p.Singer))
 		search = search.Query(boolQuery)
 		search = search.Sort("title.keyword", false)
 	} else {
