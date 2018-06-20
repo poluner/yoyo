@@ -180,8 +180,9 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 	query := elastic.NewBoolQuery()
 	query = query.Must(elastic.NewTermQuery("type", "album"))
 	if p.Language != "" {
-		query.Must(elastic.NewTermQuery("language", p.Language))
+		query = query.Must(elastic.NewTermQuery("language", p.Language))
 	}
+	search = search.Query(query)
 	search = search.Sort("title.keyword", p.Ascend == 1)
 
 	search = search.From(p.Offset).Size(p.Limit)
