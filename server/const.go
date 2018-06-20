@@ -7,7 +7,7 @@ const (
 	resourceIndex = "resources"
 	resourceType  = "doc"
 
-	songIndex = "song"
+	songIndex = "songs"
 	songType  = "doc"
 
 	noError       = 0

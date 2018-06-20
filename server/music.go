@@ -478,7 +478,12 @@ func (p *mgetParam) GetCollections() (result map[string]*Album, err error) {
 
 	for _, record := range records {
 		year, month, date := record.CreatedAt.Date()
-		songs := strings.Split(record.SongId, ",")
+		var songs []string
+		if record.SongId != "" {
+			songs = strings.Split(record.SongId, ",")
+		} else {
+			songs = make([]string, 0)
+		}
 		item := Album{
 			Id: fmt.Sprintf("%d", record.Id),
 			Type: "collection",
