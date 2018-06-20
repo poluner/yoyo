@@ -539,13 +539,15 @@ func SearchSong(c *gin.Context) {
 		"data":   result,
 	}
 
-	param.Limit = 1
-	_, singers, _ := param.SearchSinger()
-	if len(singers) != 0 {
-		singer := singers[0]
-		input := strings.TrimSpace(param.Text)
-		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
-			obj["singer"] = singer
+	if param.Offset == 0 {
+		param.Limit = 1
+		_, singers, _ := param.SearchSinger()
+		if len(singers) != 0 {
+			singer := singers[0]
+			input := strings.TrimSpace(param.Text)
+			if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
+				obj["singer"] = singer
+			}
 		}
 	}
 
