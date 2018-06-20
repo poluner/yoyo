@@ -60,6 +60,9 @@ func main() {
 	router.GET("/yoyo/album", server.GetAlbum)
 	router.GET("/yoyo/albums", server.GetAlbums)
 	router.GET("/yoyo/songs", server.GetSongs)
+	router.GET("/yoyo/collection", server.GetCollection)
+	router.GET("/yoyo/collections", server.GetCollections)
+	router.GET("/yoyo/song/play", server.GetSongUrl)
 
 	endless.ListenAndServe(address, router)
 	os.Exit(0)

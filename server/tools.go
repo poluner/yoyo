@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io/ioutil"
 )
 
 type JsonTime struct {
@@ -57,4 +58,20 @@ func btoi(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+func getInstanceId() (result string, err error){
+	response, err := http.Get("http://169.254.169.254/latest/meta-data/instance-id")
+	if err != nil {
+		return
+	}
+
+	defer response.Body.Close()
+	resBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	result = string(resBody)
+	return
 }

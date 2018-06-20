@@ -20,14 +20,14 @@ var (
 
 	ResponseCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: fmt.Sprintf("%s_requests_total", ProjectName),
-		Help: "Total request counts"}, []string{"method", "endpoint"})
+		Help: "Total request counts"}, []string{"method", "endpoint", "instance"})
 	ErrorCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: fmt.Sprintf("%s_error_total", ProjectName),
-		Help: "Total Error counts"}, []string{"method", "endpoint"})
+		Help: "Total Error counts"}, []string{"method", "endpoint", "instance"})
 	ResponseLatency = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    fmt.Sprintf("%s_response_latency_millisecond", ProjectName),
 		Help:    "Response latency (millisecond)",
-		Buckets: historyBuckets[:]}, []string{"method", "endpoint"})
+		Buckets: historyBuckets[:]}, []string{"method", "endpoint", "instance"})
 
 	sn = xray.NewFixedSegmentNamer(ProjectName)
 )
@@ -125,10 +125,10 @@ func Metrics(notLogged ...string) gin.HandlerFunc {
 
 			if statusCode != http.StatusNotFound {
 				elapsed := latency.Seconds() * 1000.0
-				ResponseCounter.WithLabelValues(method, path).Inc()
+				ResponseCounter.WithLabelValues(method, path, instanceId).Inc()
 				ErrorCounter.WithLabelValues(strconv.FormatInt(int64(statusCode), 10),
-					fmt.Sprintf("%s-%s", path, method)).Inc()
-				ResponseLatency.WithLabelValues(method, path).Observe(elapsed)
+					fmt.Sprintf("%s-%s", path, method), instanceId).Inc()
+				ResponseLatency.WithLabelValues(method, path, instanceId).Observe(elapsed)
 			}
 		}
 	}

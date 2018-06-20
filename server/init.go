@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	_ "github.com/LiuRoy/xgorm/dialects/mysql"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/service/cloudfront/sign"
 )
 
 var (
@@ -23,6 +24,9 @@ var (
 	esClient *elastic.Client
 	svc *kinesis.Kinesis
 	uploader *s3manager.Uploader
+	signer *sign.URLSigner
+
+	instanceId  = "default"
 )
 
 
@@ -70,6 +74,15 @@ func init() {
 
 	svc = kinesis.New(ses)
 	xray.AWS(svc.Client)
+
+	privateKey, err := sign.LoadPEMPrivKeyFile(s3Pri)
+	if err != nil {
+		panic(err)
+	}
+	signer = sign.NewURLSigner(s3Key, privateKey)
+
+	// 获取机器的instance id
+	instanceId, _ = getInstanceId()
 
 	go DownloadTorrentWorker()
 }

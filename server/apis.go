@@ -704,7 +704,6 @@ func GetAlbums(c *gin.Context) {
 	})
 }
 
-
 func GetSongs(c *gin.Context) {
 	var (
 		err   error
@@ -722,6 +721,113 @@ func GetSongs(c *gin.Context) {
 
 	param.ctx = c.Request.Context()
 	result, err := param.GetSongs()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+func GetCollection(c *gin.Context) {
+	var (
+		err   error
+		param getParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetCollection()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	if result == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "no resource",
+			"code":   noError,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+func GetCollections(c *gin.Context) {
+	var (
+		err   error
+		param mgetParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetCollections()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "get failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+func GetSongUrl(c *gin.Context) {
+	var (
+		err   error
+		param getParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	param.ctx = c.Request.Context()
+	result, err := param.GetSongUrl()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

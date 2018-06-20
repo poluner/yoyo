@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/olivere/elastic"
 	"github.com/aws/aws-xray-sdk-go/xray"
+	"fmt"
 )
 
 type Singer struct {
@@ -41,9 +42,10 @@ type Album struct {
 	Id         string               `json:"id"`
 	Type       string               `json:"type"`
 	Title      string               `json:"title"`
+	Description string              `json:"description,omitempty"`
 	Poster     string               `json:"poster"`
-	Slate      string               `json:"slate"`
-	Language   []string             `json:"language"`
+	Slate      string               `json:"slate,omitempty"`
+	Language   []string             `json:"language,omitempty"`
 	Runtime    int                  `json:"runtime,omitempty"`
 	Release    string               `json:"release"`
 	SingerId   []string             `json:"singer_id,omitempty"`
@@ -391,5 +393,115 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 		result = append(result, &item)
 	}
 
+	return
+}
+
+
+func (p *getParam) GetCollection() (result *Album, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "collection-get")
+	defer seg.Close(err)
+
+	cache, e := redisConn.Get(p.Id).Bytes()
+	if e == nil && len(cache) > 0 {
+		album := Album{}
+		err = json.Unmarshal(cache, &album)
+		if err != nil {
+			return
+		}
+		result = &album
+		return
+	}
+
+	records, err := QueryCollections(p.ctx, []string{p.Id})
+	if err != nil || len(records) == 0 {
+		return
+	}
+
+	record := records[0]
+	year, month, date := record.CreatedAt.Date()
+	songs := strings.Split(record.SongId, ",")
+	album := Album{
+		Id: fmt.Sprintf("%d", record.Id),
+		Type: "collection",
+		Title: record.Title,
+		Description: record.Description,
+		Poster: record.Poster,
+		Release: fmt.Sprintf("%d-%d-%d", year, month, date),
+		SongId: songs,
+		SongCount: len(songs),
+	}
+
+	if songs != nil && len(songs) > 0 {
+		mget := esClient.Mget()
+		for _, id := range songs {
+			item := elastic.NewMultiGetItem().Index(songIndex).Type(songType).Id(id)
+			mget = mget.Add(item)
+		}
+
+		songs := make([]*Song, 0, len(album.SongId))
+		res, e := mget.Do(p.ctx)
+		if e == nil {
+			for _, hit := range res.Docs {
+				if hit.Source == nil {
+					continue
+				}
+
+				item := Song{}
+				e := json.Unmarshal(*hit.Source, &item)
+				if e != nil {
+					continue
+				}
+				songs = append(songs, &item)
+			}
+		}
+		album.Songs = songs
+	}
+
+	cache, e = json.Marshal(&album)
+	if e == nil {
+		redisConn.Set(p.Id, cache, time.Hour * 2)
+	}
+	result = &album
+	return
+}
+
+func (p *mgetParam) GetCollections() (result map[string]*Album, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "collection-mget")
+	defer seg.Close(err)
+
+	result = make(map[string]*Album)
+	if p.Ids == nil || len(p.Ids) == 0 {
+		return
+	}
+
+	records, err := QueryCollections(p.ctx, p.Ids)
+	if err != nil {
+		return
+	}
+
+	for _, record := range records {
+		year, month, date := record.CreatedAt.Date()
+		songs := strings.Split(record.SongId, ",")
+		item := Album{
+			Id: fmt.Sprintf("%d", record.Id),
+			Type: "collection",
+			Title: record.Title,
+			Description: record.Description,
+			Poster: record.Poster,
+			Release: fmt.Sprintf("%d-%d-%d", year, month, date),
+			SongId: songs,
+			SongCount: len(songs),
+		}
+		result[item.Id] = &item
+	}
+
+	return
+}
+
+func (p *getParam) GetSongUrl() (result map[string]string, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "song-url-get")
+	defer seg.Close(err)
+
+	result, err = QuerySongUrl(p.ctx, p.Id)
 	return
 }

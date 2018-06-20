@@ -29,7 +29,7 @@ func Recovery() gin.HandlerFunc {
 				log.Error(err)
 				log.Error("%s\n%s", string(httpRequest), string(stack))
 
-				ErrorCounter.WithLabelValues(c.Request.Method, endPoint).Inc()
+				ErrorCounter.WithLabelValues(c.Request.Method, endPoint, instanceId).Inc()
 				c.AbortWithStatus(http.StatusInternalServerError)
 			}
 		}()

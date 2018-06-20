@@ -6,6 +6,30 @@ import (
 	"context"
 )
 
+type SongDownload struct {
+	Id          uint64    `gorm:"column:id;type:bigint;primary_key"`
+	SongId      string    `gorm:"column:song_id;type:varchar(20)"`
+	BitRate     string    `gorm:"column:bit_rate;type:varchar(20)"`
+	DownloadUrl string    `gorm:"column:download_url;type:varchar(300)"`
+	CreatedAt   time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+}
+
+func (SongDownload) TableName() string {
+	return "song_download"
+}
+
+type SongCollection struct {
+	Id          uint64    `gorm:"column:id;type:bigint;primary_key"`
+	Title       string    `gorm:"column:title;type:varchar(100)"`
+	Description string    `gorm:"column:description;type:varchar(500)"`
+	Poster      string    `gorm:"column:poster;type:varchar(300)"`
+	SongId      string    `gorm:"column:song_id;type:varchar(2000)"`
+	CreatedAt   time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+}
+
+func (SongCollection) TableName() string {
+	return "song_collection"
+}
 
 type TorrentDownload struct {
 	Id          uint64    `gorm:"column:id;type:bigint;primary_key"`
@@ -164,5 +188,35 @@ func QueryTorrentUrl(ctx context.Context, infohashs []string) (downloadMap map[s
 			downloadMap[record.InfoHash] = record.DownloadUrl
 		}
 	}
+	return
+}
+
+func QuerySongUrl(ctx context.Context, songId string) (downloadMap map[string]string, err error) {
+	downloadMap = make(map[string]string)
+
+	var records []SongDownload
+	err = dbConn.Where("song_id = ?", songId).Find(ctx, &records).Error
+	if err != nil {
+		return
+	}
+
+	for _, record := range records {
+		signUrl, e := signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour * 1))
+		if e != nil {
+			continue
+		}
+
+		downloadMap[record.BitRate] = signUrl
+	}
+	return
+}
+
+func QueryCollections(ctx context.Context, collectionIds []string) (collections []SongCollection, err error) {
+	if collectionIds == nil || len(collectionIds) == 0 {
+		collections = []SongCollection{}
+		return
+	}
+
+	err = dbConn.Where("id in (?)", collectionIds).Find(ctx, &collections).Error
 	return
 }
