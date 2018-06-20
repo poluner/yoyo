@@ -829,7 +829,7 @@ func GetCollections(c *gin.Context) {
 func GetSongUrl(c *gin.Context) {
 	var (
 		err   error
-		param getParam
+		param mgetParam
 	)
 
 	err = c.BindQuery(&param)
@@ -842,7 +842,7 @@ func GetSongUrl(c *gin.Context) {
 	}
 
 	param.ctx = c.Request.Context()
-	result, err := param.GetSongUrl()
+	result, err := param.GetSongsUrl()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

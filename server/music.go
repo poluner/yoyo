@@ -495,10 +495,10 @@ func (p *mgetParam) GetCollections() (result map[string]*Album, err error) {
 	return
 }
 
-func (p *getParam) GetSongUrl() (result map[string]string, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "song-url-get")
+func (p *mgetParam) GetSongsUrl() (result map[string]map[string]string, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "song-url-mget")
 	defer seg.Close(err)
 
-	result, err = QuerySongUrl(p.ctx, p.Id)
+	result, err = QuerySongUrl(p.ctx, p.Ids)
 	return
 }

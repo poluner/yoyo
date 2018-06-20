@@ -191,11 +191,14 @@ func QueryTorrentUrl(ctx context.Context, infohashs []string) (downloadMap map[s
 	return
 }
 
-func QuerySongUrl(ctx context.Context, songId string) (downloadMap map[string]string, err error) {
-	downloadMap = make(map[string]string)
+func QuerySongUrl(ctx context.Context, songId []string) (downloadMap map[string]map[string]string, err error) {
+	downloadMap = make(map[string]map[string]string)
+	if songId == nil || len(songId) == 0 {
+		return
+	}
 
 	var records []SongDownload
-	err = dbConn.Where("song_id = ?", songId).Find(ctx, &records).Error
+	err = dbConn.Where("song_id in (?)", songId).Find(ctx, &records).Error
 	if err != nil {
 		return
 	}
@@ -206,7 +209,14 @@ func QuerySongUrl(ctx context.Context, songId string) (downloadMap map[string]st
 			continue
 		}
 
-		downloadMap[record.BitRate] = signUrl
+		bitMap, ok := downloadMap[record.SongId]
+		if ok {
+			bitMap[record.BitRate] = signUrl
+		} else {
+			bitMap := make(map[string]string)
+			bitMap[record.BitRate] = signUrl
+		}
+		downloadMap[record.SongId] = bitMap
 	}
 	return
 }
