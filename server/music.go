@@ -178,10 +178,7 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 	search := esClient.Search().Index(songIndex).Type(songType)
 
 	query := elastic.NewBoolQuery()
-	query = query.Must(elastic.NewBoolQuery().
-		Should(elastic.NewTermQuery("type", "playlist")).
-		Should(elastic.NewTermQuery("type", "album")))
-
+	query = query.Must(elastic.NewTermQuery("type", "album"))
 	if p.Language != "" {
 		query.Must(elastic.NewTermQuery("language", p.Language))
 	}
