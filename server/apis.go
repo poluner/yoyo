@@ -539,7 +539,7 @@ func SearchSong(c *gin.Context) {
 		"data":   result,
 	}
 
-	if param.Offset == 0 {
+	if param.Offset == 0 && param.Singer == "" {
 		param.Limit = 1
 		_, singers, _ := param.SearchSinger()
 		if len(singers) != 0 {
