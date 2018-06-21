@@ -23,7 +23,7 @@ type SongCollection struct {
 	Title       string    `gorm:"column:title;type:varchar(100)"`
 	Description string    `gorm:"column:description;type:varchar(500)"`
 	Poster      string    `gorm:"column:poster;type:varchar(300)"`
-	SongId      string    `gorm:"column:song_id;type:varchar(2000)"`
+	SongId      string    `gorm:"column:song_id;type:varchar(5000)"`
 	CreatedAt   time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
 }
 

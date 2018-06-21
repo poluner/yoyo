@@ -52,6 +52,7 @@ type Album struct {
 	SongId     []string             `json:"song_id"`
 	SongCount  int                  `json:"song_count"`
 	Songs      []*Song              `json:"songs,omitempty"`
+	Singer     []string             `json:"singer,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
@@ -152,6 +153,9 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 	if total > maxResultWindow {
 		total = maxResultWindow
 	}
+
+	// 需要查询歌单的歌手
+	mget := esClient.Mget()
 	for _, hit := range res.Hits.Hits {
 		item := Album{}
 		e := json.Unmarshal(*hit.Source, &item)
@@ -159,8 +163,37 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 			continue
 		}
 
+		if item.SingerId != nil && len(item.SingerId) != 0 {
+			s := elastic.NewMultiGetItem().Index(songIndex).Type(songType).Id(item.SingerId[0])
+			mget = mget.Add(s)
+		}
+
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
+	}
+
+	singers, _ := mget.Do(p.ctx)
+	singerNameMap := make(map[string]string)
+	for _, hit := range singers.Docs {
+		if hit.Source == nil {
+			continue
+		}
+
+		item := Singer{}
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
+			continue
+		}
+		singerNameMap[item.Id] = item.Title
+	}
+
+	for _, item := range result {
+		if item.SingerId != nil && len(item.SingerId) != 0 {
+			name, ok := singerNameMap[item.SingerId[0]]
+			if ok {
+				item.Singer = []string{name}
+			}
+		}
 	}
 
 	return
