@@ -154,7 +154,6 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 		total = maxResultWindow
 	}
 
-	// 需要查询歌单的歌手
 	mget := esClient.Mget()
 	for _, hit := range res.Hits.Hits {
 		item := Album{}
@@ -172,26 +171,28 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 		result = append(result, &item)
 	}
 
-	singers, _ := mget.Do(p.ctx)
-	singerNameMap := make(map[string]string)
-	for _, hit := range singers.Docs {
-		if hit.Source == nil {
-			continue
+	singers, e := mget.Do(p.ctx)
+	if e == nil {
+		singerNameMap := make(map[string]string)
+		for _, hit := range singers.Docs {
+			if hit.Source == nil {
+				continue
+			}
+
+			item := Singer{}
+			e := json.Unmarshal(*hit.Source, &item)
+			if e != nil {
+				continue
+			}
+			singerNameMap[item.Id] = item.Title
 		}
 
-		item := Singer{}
-		e := json.Unmarshal(*hit.Source, &item)
-		if e != nil {
-			continue
-		}
-		singerNameMap[item.Id] = item.Title
-	}
-
-	for _, item := range result {
-		if item.SingerId != nil && len(item.SingerId) != 0 {
-			name, ok := singerNameMap[item.SingerId[0]]
-			if ok {
-				item.Singer = []string{name}
+		for _, item := range result {
+			if item.SingerId != nil && len(item.SingerId) != 0 {
+				name, ok := singerNameMap[item.SingerId[0]]
+				if ok {
+					item.Singer = []string{name}
+				}
 			}
 		}
 	}
@@ -228,6 +229,8 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 	if total > maxResultWindow {
 		total = maxResultWindow
 	}
+
+	mget := esClient.Mget()
 	for _, hit := range res.Hits.Hits {
 		item := Album{}
 		e := json.Unmarshal(*hit.Source, &item)
@@ -235,7 +238,38 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 			continue
 		}
 
+		if item.SingerId != nil && len(item.SingerId) != 0 {
+			s := elastic.NewMultiGetItem().Index(songIndex).Type(songType).Id(item.SingerId[0])
+			mget = mget.Add(s)
+		}
+
 		result = append(result, &item)
+	}
+
+	singers, e := mget.Do(p.ctx)
+	if e == nil {
+		singerNameMap := make(map[string]string)
+		for _, hit := range singers.Docs {
+			if hit.Source == nil {
+				continue
+			}
+
+			item := Singer{}
+			e := json.Unmarshal(*hit.Source, &item)
+			if e != nil {
+				continue
+			}
+			singerNameMap[item.Id] = item.Title
+		}
+
+		for _, item := range result {
+			if item.SingerId != nil && len(item.SingerId) != 0 {
+				name, ok := singerNameMap[item.SingerId[0]]
+				if ok {
+					item.Singer = []string{name}
+				}
+			}
+		}
 	}
 
 	return
