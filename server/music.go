@@ -183,7 +183,7 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 		query = query.Must(elastic.NewTermQuery("language", p.Language))
 	}
 	search = search.Query(query)
-	search = search.Sort("title.keyword", p.Ascend == 1)
+	search = search.Sort("release", p.Ascend == 1)
 
 	search = search.From(p.Offset).Size(p.Limit)
 	res, err := search.Do(p.ctx)
@@ -365,6 +365,7 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 		search = search.Sort("_score", false)
 	} else {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "singer"))
+		query = query.Must(elastic.NewTermQuery("tag", "discover"))
 		search = search.Query(query)
 		search = search.Sort("title.keyword", true)
 	}
@@ -393,6 +394,37 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 	return
 }
 
+func (p *searchParam) HotSinger() (total int64, result []*Singer, err error) {
+	_, seg := xray.BeginSubsegment(p.ctx, "singer-hot")
+	defer seg.Close(err)
+
+	result = make([]*Singer, 0, p.Limit)
+	search := esClient.Search().Index(songIndex).Type(songType)
+	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "singer"))
+	query = query.Must(elastic.NewTermQuery("tag", "hot"))
+	search = search.Query(query)
+	search = search.Sort("title.keyword", true)
+
+	search = search.From(p.Offset).Size(p.Limit)
+	res, err := search.Do(p.ctx)
+	if err != nil {
+		return
+	}
+
+	total = res.TotalHits()
+	for _, hit := range res.Hits.Hits {
+		item := Singer{}
+		e := json.Unmarshal(*hit.Source, &item)
+		if e != nil {
+			continue
+		}
+
+		item.Highlight = hit.Highlight
+		result = append(result, &item)
+	}
+
+	return
+}
 
 func (p *getParam) GetCollection() (result *Album, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "collection-get")

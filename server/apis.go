@@ -895,3 +895,40 @@ func SearchSinger(c *gin.Context) {
 		"data":   result,
 	})
 }
+
+func HotSinger(c *gin.Context) {
+	var (
+		err   error
+		param searchParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	param.ctx = c.Request.Context()
+	total, result, err := param.HotSinger()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"total":  total,
+		"data":   result,
+	})
+}

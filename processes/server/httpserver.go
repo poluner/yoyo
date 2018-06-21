@@ -58,6 +58,7 @@ func main() {
 	router.GET("/yoyo/album/search", server.SearchAlbum)
 	router.GET("/yoyo/album/discover", server.DiscoverAlbum)
 	router.GET("/yoyo/singer/search", server.SearchSinger)
+	router.GET("/yoyo/singer/hot", server.HotSinger)
 	router.GET("/yoyo/album", server.GetAlbum)
 	router.GET("/yoyo/albums", server.GetAlbums)
 	router.GET("/yoyo/songs", server.GetSongs)
