@@ -11,10 +11,10 @@ import (
 
 type Singer struct {
 	Id         string               `json:"id"`
-	Type       string               `json:"type"`
+	//Type       string               `json:"type"`
 	Title      string               `json:"title"`
 	Poster     string               `json:"poster"`
-	Slate      string               `json:"slate"`
+	//Slate      string               `json:"slate"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
@@ -85,6 +85,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, err error) {
 	} else {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "song"))
 		search = search.Query(query)
+		search = search.Sort("release", false)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
@@ -141,6 +142,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 	} else {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "album"))
 		search = search.Query(query)
+		search = search.Sort("release", false)
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
@@ -453,7 +455,6 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 		if e != nil {
 			continue
 		}
-
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
