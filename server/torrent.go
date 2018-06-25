@@ -208,7 +208,9 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 		hotFunction = hotFunction.Field("hot").Modifier("ln2p").Missing(1).Weight(0.1)
 		collectFunction := elastic.NewGaussDecayFunction().FieldName("collected_at")
 		collectFunction = collectFunction.Origin(time.Now()).Offset("30d").Scale("365d").Decay(0.5).Weight(0.1)
-		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction)
+		sizeFunction := elastic.NewGaussDecayFunction().FieldName("length")
+		sizeFunction = sizeFunction.Origin(750000000).Offset(250000000).Scale(100000000000).Decay(0.5).Weight(0.1)
+		query = query.AddScoreFunc(hotFunction).AddScoreFunc(collectFunction).AddScoreFunc(sizeFunction)
 
 		highlight := elastic.NewHighlight().Field("name")
 		search = search.Query(query).Highlight(highlight)
