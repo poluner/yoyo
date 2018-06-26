@@ -413,6 +413,7 @@ func (p *mgetParam) GetSongs() (result map[string]*Song, err error) {
 		if e != nil {
 			continue
 		}
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
 		result[item.Id] = &item
 	}
 
@@ -461,6 +462,7 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 		if e != nil {
 			continue
 		}
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
@@ -493,6 +495,7 @@ func (p *searchParam) HotSinger() (total int64, result []*Singer, err error) {
 			continue
 		}
 
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
