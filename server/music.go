@@ -462,7 +462,7 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 		if e != nil {
 			continue
 		}
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
@@ -495,7 +495,7 @@ func (p *searchParam) HotSinger() (total int64, result []*Singer, err error) {
 			continue
 		}
 
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
