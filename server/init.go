@@ -16,6 +16,7 @@ import (
 	_ "github.com/LiuRoy/xgorm/dialects/mysql"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/cloudfront/sign"
+	"regexp"
 )
 
 var (
@@ -26,6 +27,8 @@ var (
 	uploader *s3manager.Uploader
 	signer *sign.URLSigner
 
+	musicImagePattern *regexp.Regexp
+
 	instanceId  = "default"
 )
 
@@ -34,6 +37,8 @@ func init() {
 	prometheus.MustRegister(ResponseCounter)
 	prometheus.MustRegister(ErrorCounter)
 	prometheus.MustRegister(ResponseLatency)
+
+	musicImagePattern = regexp.MustCompile(`\d+x\d+`)
 
 	var err error
 	ss, err := sampling.NewLocalizedStrategyFromFilePath(samplePath)
