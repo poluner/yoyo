@@ -654,7 +654,7 @@ func GetAlbum(c *gin.Context) {
 	)
 
 	err = c.BindQuery(&param)
-	if err != nil || param.Type == "" {
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"result": "params invalid",
 			"code":   paramsInvalid,
@@ -701,7 +701,7 @@ func GetAlbums(c *gin.Context) {
 	)
 
 	err = c.BindQuery(&param)
-	if err != nil || param.Type == "" {
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"result": "params invalid",
 			"code":   paramsInvalid,
