@@ -59,11 +59,13 @@ type discoverParam struct {
 
 type getParam struct {
 	Id       string    `form:"id" binding:"required"`
+	Type     string    `form:"type"`
 	ctx      context.Context
 }
 
 type mgetParam struct {
 	Ids      []string  `form:"id" binding:"required"`
+	Type     string    `form:"type"`
 	ctx      context.Context
 }
 
@@ -652,7 +654,7 @@ func GetAlbum(c *gin.Context) {
 	)
 
 	err = c.BindQuery(&param)
-	if err != nil {
+	if err != nil || param.Type == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"result": "params invalid",
 			"code":   paramsInvalid,
@@ -661,7 +663,13 @@ func GetAlbum(c *gin.Context) {
 	}
 
 	param.ctx = c.Request.Context()
-	result, err := param.GetAlbum()
+
+	var result *Album
+	if param.Type == "collection" {
+		result, err = param.GetCollection()
+	} else {
+		result, err = param.GetAlbum()
+	}
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -693,7 +701,7 @@ func GetAlbums(c *gin.Context) {
 	)
 
 	err = c.BindQuery(&param)
-	if err != nil {
+	if err != nil || param.Type == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"result": "params invalid",
 			"code":   paramsInvalid,
@@ -702,7 +710,12 @@ func GetAlbums(c *gin.Context) {
 	}
 
 	param.ctx = c.Request.Context()
-	result, err := param.GetAlbums()
+	var result map[string]*Album
+	if param.Type == "collection" {
+		result, err = param.GetCollections()
+	} else {
+		result, err = param.GetAlbums()
+	}
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
