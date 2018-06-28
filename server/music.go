@@ -470,33 +470,32 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 	return
 }
 
-func (p *searchParam) HotSinger() (total int64, result []*Singer, err error) {
+func (p *mgetParam) HotSinger() (result []*Singer, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "singer-hot")
 	defer seg.Close(err)
 
-	result = make([]*Singer, 0, p.Limit)
-	search := esClient.Search().Index(songIndex).Type(songType)
-	query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "singer"))
-	query = query.Must(elastic.NewTermQuery("tag", "hot"))
-	search = search.Query(query)
-	search = search.Sort("title.keyword", true)
+	mget := esClient.Mget()
+	for _, id := range p.Ids {
+		item := elastic.NewMultiGetItem().Index(songIndex).Type(songType).Id(id)
+		mget = mget.Add(item)
+	}
 
-	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := mget.Do(p.ctx)
 	if err != nil {
 		return
 	}
 
-	total = res.TotalHits()
-	for _, hit := range res.Hits.Hits {
+	for _, hit := range res.Docs {
+		if hit.Source == nil {
+			continue
+		}
+
 		item := Singer{}
 		e := json.Unmarshal(*hit.Source, &item)
 		if e != nil {
 			continue
 		}
-
 		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
-		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
 

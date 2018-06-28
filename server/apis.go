@@ -910,25 +910,11 @@ func SearchSinger(c *gin.Context) {
 }
 
 func HotSinger(c *gin.Context) {
-	var (
-		err   error
-		param searchParam
-	)
+	var param mgetParam
 
-	err = c.BindQuery(&param)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"result": "params invalid",
-			"code":   paramsInvalid,
-		})
-		return
-	}
-
-	if param.Limit == 0 {
-		param.Limit = 10
-	}
 	param.ctx = c.Request.Context()
-	total, result, err := param.HotSinger()
+	param.Ids = hotSingerIds
+	result, err := param.HotSinger()
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -941,7 +927,7 @@ func HotSinger(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"result": "ok",
 		"code":   noError,
-		"total":  total,
+		"total":  len(result),
 		"data":   result,
 	})
 }
