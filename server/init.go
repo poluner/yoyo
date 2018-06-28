@@ -1,6 +1,7 @@
 package server
 
 import (
+	"regexp"
 	"gopkg.in/redis.v5"
 	"github.com/LiuRoy/xgorm"
 	"github.com/olivere/elastic"
@@ -16,7 +17,7 @@ import (
 	_ "github.com/LiuRoy/xgorm/dialects/mysql"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/cloudfront/sign"
-	"regexp"
+	"github.com/json-iterator/go"
 )
 
 var (
@@ -30,6 +31,7 @@ var (
 	musicImagePattern *regexp.Regexp
 
 	instanceId  = "default"
+	json        = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 

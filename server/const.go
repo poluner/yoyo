@@ -10,6 +10,9 @@ const (
 	songIndex = "songs"
 	songType  = "doc"
 
+	suggestIndex = "suggest"
+	suggestType  = "doc"
+
 	noError       = 0
 	internalErr   = 100
 	paramsInvalid = 200

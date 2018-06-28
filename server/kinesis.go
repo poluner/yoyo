@@ -1,14 +1,13 @@
 package server
 
 import (
+	"time"
 	"context"
-	"encoding/json"
+	"net/http"
 	log "github.com/alecthomas/log4go"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 	"github.com/satori/go.uuid"
-	"net/http"
-	"time"
 )
 
 type KEvent struct {

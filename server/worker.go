@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"net/http"
-	"encoding/json"
 	log "github.com/alecthomas/log4go"
 )
 

@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"strings"
-	"encoding/json"
 	"github.com/olivere/elastic"
 	"github.com/LiuRoy/yoyo/dht"
 	log "github.com/alecthomas/log4go"
@@ -22,7 +21,6 @@ type FileItem struct {
 
 type EsTorrent struct {
 	Name        string     `json:"name"`
-	Name2       string     `json:"name2"`
 	Type        string     `json:"type,omitempty"`
 	Download    int        `json:"hot"`
 	Length      int        `json:"length"`
@@ -44,7 +42,6 @@ type Torrent struct {
 func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err error) {
 	item := EsTorrent{}
 	item.Name = m.Name
-	item.Name2 = item.Name
 	item.Download = hot
 	item.CollectedAt = time.Now()
 	item.Type = "torrent"

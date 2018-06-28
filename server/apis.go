@@ -1,20 +1,18 @@
 package server
 
 import (
-	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 	"time"
 	"context"
 	"fmt"
 	"strings"
+	"github.com/gin-gonic/gin"
 )
 
 type suggestParam struct {
 	Text string `form:"text" binding:"required"`
 	Size int    `form:"size"`
-	Type string `form:"type"`
 
 	ctx  context.Context
 }
@@ -88,11 +86,7 @@ func Suggest(c *gin.Context) {
 	if param.Size == 0 {
 		param.Size = 10
 	}
-	if param.Type == "" {
-		param.Type = "torrent"
-	}
 	param.ctx = c.Request.Context()
-
 	result, err := param.Suggest()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

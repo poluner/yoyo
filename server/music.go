@@ -1,12 +1,11 @@
 package server
 
 import (
+	"fmt"
 	"time"
 	"strings"
-	"encoding/json"
 	"github.com/olivere/elastic"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	"fmt"
 )
 
 type Singer struct {
