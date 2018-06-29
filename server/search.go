@@ -45,10 +45,10 @@ type searchMovieRequest struct {
 }
 
 type searchAllResult struct {
-	Movie  *movieResult  `json:"movie"`
-	Album  *albumResult  `json:"album"`
-	Song   *songResult   `json:"song"`
-	Singer *Singer       `json:"singer"`
+	Movie  *movieResult  `json:"movie,omitempty"`
+	Album  *albumResult  `json:"album,omitempty"`
+	Song   *songResult   `json:"song,omitempty"`
+	Singer *Singer       `json:"singer,omitempty"`
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
@@ -81,6 +81,7 @@ func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
 		select {
 		case singer := <-singerRequest.Channel:
 			result.Singer = singer
+			log.Info("aaaaaa singer channel output data. data:%+v", singer)
 		case song := <-songRequest.Channel:
 			result.Song = song
 		case album := <-albumRequest.Channel:
