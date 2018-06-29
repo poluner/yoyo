@@ -102,7 +102,7 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 	return
 }
 
-func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error) {
+func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore float64, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "movie-search")
 	defer seg.Close(err)
 
@@ -146,6 +146,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, err error)
 		return
 	}
 
+	maxScore = *res.Hits.MaxScore
 	total = res.TotalHits()
 	if total > maxResultWindow {
 		total = maxResultWindow

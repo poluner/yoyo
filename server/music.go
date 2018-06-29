@@ -56,7 +56,7 @@ type Album struct {
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
 
-func (p *searchParam) SearchSong() (total int64, result []*Song, err error) {
+func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float64, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "song-search")
 	defer seg.Close(err)
 
@@ -93,6 +93,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, err error) {
 		return
 	}
 
+	maxScore = *res.Hits.MaxScore
 	total = res.TotalHits()
 	if total > maxResultWindow {
 		total = maxResultWindow
@@ -112,7 +113,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, err error) {
 	return
 }
 
-func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
+func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore float64, err error) {
 	_, seg := xray.BeginSubsegment(p.ctx, "album-search")
 	defer seg.Close(err)
 
@@ -151,6 +152,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, err error) {
 		return
 	}
 
+	maxScore = *res.Hits.MaxScore
 	total = res.TotalHits()
 	if total > maxResultWindow {
 		total = maxResultWindow

@@ -216,7 +216,7 @@ func SearchMovie(c *gin.Context) {
 		param.Limit = 10
 	}
 	param.ctx = c.Request.Context()
-	total, result, err := param.SearchMovie()
+	total, result, _, err := param.SearchMovie()
 
 	event := KEvent{
 		EventClass: 1,
@@ -508,7 +508,7 @@ func SearchSong(c *gin.Context) {
 		param.Limit = 10
 	}
 	param.ctx = c.Request.Context()
-	total, result, err := param.SearchSong()
+	total, result, _, err := param.SearchSong()
 
 	event := KEvent{
 		EventClass: 1,
@@ -576,7 +576,7 @@ func SearchAlbum(c *gin.Context) {
 		param.Limit = 10
 	}
 	param.ctx = c.Request.Context()
-	total, result, err := param.SearchAlbum()
+	total, result, _, err := param.SearchAlbum()
 
 	event := KEvent{
 		EventClass: 1,
@@ -929,6 +929,42 @@ func HotSinger(c *gin.Context) {
 		"result": "ok",
 		"code":   noError,
 		"total":  len(result),
+		"data":   result,
+	})
+}
+
+func SearchAll(c *gin.Context) {
+	var (
+		err   error
+		param searchParam
+	)
+
+	err = c.BindQuery(&param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"result": "params invalid",
+			"code":   paramsInvalid,
+		})
+		return
+	}
+
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	param.ctx = c.Request.Context()
+	result, _ := param.SearchAll()
+
+	if result == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
 		"data":   result,
 	})
 }

@@ -65,6 +65,7 @@ func main() {
 	router.GET("/yoyo/collection", server.GetCollection)
 	router.GET("/yoyo/collections", server.GetCollections)
 	router.GET("/yoyo/song/play", server.GetSongUrl)
+	router.GET("/yoyo/all/search", server.SearchAll)
 
 	endless.ListenAndServe(address, router)
 	os.Exit(0)
