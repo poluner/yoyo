@@ -47,10 +47,8 @@ func DownloadTorrentWorker() {
 func SearchSingerWorker() {
 	for {
 		request := <-searchSingerChannel
-		log.Info("aaaaaa singer request: %+v", request)
 
 		total, singers, err := request.Param.SearchSinger()
-		log.Info("aaaaaa singer search finish. total:%d, err:%v", total, err)
 		if err != nil || total == 0 {
 			request.Channel <- nil
 			continue
@@ -61,17 +59,14 @@ func SearchSingerWorker() {
 		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
 			request.Channel <- singer
 		}
-		log.Info("aaaaaa singer channel input finish. result: %+v", singer)
 	}
 }
 
 func SearchSongWorker() {
 	for {
 		request := <-searchSongChannel
-		log.Info("aaaaaa song request: %+v", request)
 
 		total, songs, maxScore, err := request.Param.SearchSong()
-		log.Info("aaaaaa song search finish. total:%d, err:%v", total, err)
 		if err != nil {
 			request.Channel <- nil
 			continue
@@ -83,17 +78,14 @@ func SearchSongWorker() {
 			Data: songs,
 		}
 		request.Channel <- &result
-		log.Info("aaaaaa song channel input finish. result: %+v", result)
 	}
 }
 
 func SearchAlbumWorker() {
 	for {
 		request := <-searchAlbumChannel
-		log.Info("aaaaaa album request: %+v", request)
 
 		total, albums, maxScore, err := request.Param.SearchAlbum()
-		log.Info("aaaaaa album search finish. total:%d, err:%v", total, err)
 		if err != nil {
 			request.Channel <- nil
 			continue
@@ -105,17 +97,14 @@ func SearchAlbumWorker() {
 			Data: albums,
 		}
 		request.Channel <- &result
-		log.Info("aaaaaa album channel input finish. result: %+v", result)
 	}
 }
 
 func SearchMovieWorker() {
 	for {
 		request := <-searchMovieChannel
-		log.Info("aaaaaa movie request: %+v", request)
 
 		total, movies, maxScore, err := request.Param.SearchMovie()
-		log.Info("aaaaaa movie search finish. total:%d, err:%v", total, err)
 		if err != nil {
 			request.Channel <- nil
 			continue
@@ -127,6 +116,5 @@ func SearchMovieWorker() {
 			Data: movies,
 		}
 		request.Channel <- &result
-		log.Info("aaaaaa movie channel input finish. result: %+v", result)
 	}
 }

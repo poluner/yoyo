@@ -81,18 +81,14 @@ func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
 		select {
 		case singer := <-singerRequest.Channel:
 			result.Singer = singer
-			log.Info("aaaaaa singer channel output data. data:%+v", singer)
 		case song := <-songRequest.Channel:
 			result.Song = song
-			log.Info("aaaaaa song channel output data. data:%+v", song)
 		case album := <-albumRequest.Channel:
 			result.Album = album
-			log.Info("aaaaaa album channel output data. data:%+v", album)
 		case movie := <-movieRequest.Channel:
 			result.Movie = movie
-			log.Info("aaaaaa movie channel output data. data:%+v", movie)
 		case <-time.After(time.Second * 1):
-			log.Info("aaaaaa time out")
+			log.Info("search time out")
 			err = errors.New("search all timeout")
 			return
 		}
