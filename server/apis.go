@@ -12,6 +12,7 @@ import (
 
 type suggestParam struct {
 	Text string `form:"text" binding:"required"`
+	Type string `form:"type"`
 	Size int    `form:"size"`
 
 	ctx  context.Context
@@ -87,7 +88,13 @@ func Suggest(c *gin.Context) {
 		param.Size = 10
 	}
 	param.ctx = c.Request.Context()
-	result, err := param.Suggest()
+
+	var result []string
+	if param.Type == "" {
+		result, err = param.TorrentSuggest()
+	} else {
+		result, err = param.Suggest()
+	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": "search failed",
