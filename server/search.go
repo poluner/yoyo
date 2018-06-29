@@ -26,29 +26,29 @@ type songResult struct {
 
 type searchSingerRequest struct {
 	Param         searchParam
-	singerChannel chan *Singer
+	singerChannel chan Singer
 }
 
 type searchSongRequest struct {
 	Param         searchParam
-	songChannel   chan *songResult
+	songChannel   chan songResult
 }
 
 type searchAlbumRequest struct {
 	Param         searchParam
-	albumChannel   chan *albumResult
+	albumChannel   chan albumResult
 }
 
 type searchMovieRequest struct {
 	Param         searchParam
-	movieChannel   chan *movieResult
+	movieChannel   chan movieResult
 }
 
 type searchAllResult struct {
-	Movie  *movieResult  `json:"movie"`
-	Album  *albumResult  `json:"album"`
-	Song   *songResult   `json:"song"`
-	Singer *Singer       `json:"singer"`
+	Movie  movieResult  `json:"movie"`
+	Album  albumResult  `json:"album"`
+	Song   songResult   `json:"song"`
+	Singer Singer       `json:"singer"`
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {

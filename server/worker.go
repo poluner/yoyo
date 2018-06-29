@@ -59,7 +59,7 @@ func SearchSingerWorker() {
 		singer := singers[0]
 		input := strings.TrimSpace(request.Param.Text)
 		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
-			request.singerChannel <- singer
+			request.singerChannel <- *singer
 		}
 		log.Info("aaaaaa singer channel input finish. result: %+v", singer)
 	}
@@ -82,7 +82,7 @@ func SearchSongWorker() {
 			MaxScore: maxScore,
 			Data: songs,
 		}
-		request.songChannel <- &result
+		request.songChannel <- result
 		log.Info("aaaaaa song channel input finish. result: %+v", result)
 	}
 }
@@ -104,7 +104,7 @@ func SearchAlbumWorker() {
 			MaxScore: maxScore,
 			Data: albums,
 		}
-		request.albumChannel <- &result
+		request.albumChannel <- result
 		log.Info("aaaaaa album channel input finish. result: %+v", result)
 	}
 }
@@ -126,7 +126,7 @@ func SearchMovieWorker() {
 			MaxScore: maxScore,
 			Data: movies,
 		}
-		request.movieChannel <- &result
+		request.movieChannel <- result
 		log.Info("aaaaaa movie channel input finish. result: %+v", result)
 	}
 }
