@@ -47,8 +47,10 @@ func DownloadTorrentWorker() {
 func SearchSingerWorker() {
 	for {
 		request := <-searchSingerChannel
+		log.Info("aaaaaa singer request: %+v", request)
 
 		total, singers, err := request.Param.SearchSinger()
+		log.Info("aaaaaa singer search finish. total:%d, err:%v", total, err)
 		if err != nil || total == 0 {
 			request.singerChannel <- nil
 			continue
@@ -65,8 +67,10 @@ func SearchSingerWorker() {
 func SearchSongWorker() {
 	for {
 		request := <-searchSongChannel
+		log.Info("aaaaaa song request: %+v", request)
 
 		total, songs, maxScore, err := request.Param.SearchSong()
+		log.Info("aaaaaa song search finish. total:%d, err:%v", total, err)
 		if err != nil {
 			request.songChannel <- nil
 			continue
@@ -84,8 +88,10 @@ func SearchSongWorker() {
 func SearchAlbumWorker() {
 	for {
 		request := <-searchAlbumChannel
+		log.Info("aaaaaa album request: %+v", request)
 
 		total, albums, maxScore, err := request.Param.SearchAlbum()
+		log.Info("aaaaaa album search finish. total:%d, err:%v", total, err)
 		if err != nil {
 			request.albumChannel <- nil
 			continue
@@ -103,8 +109,10 @@ func SearchAlbumWorker() {
 func SearchMovieWorker() {
 	for {
 		request := <-searchMovieChannel
+		log.Info("aaaaaa movie request: %+v", request)
 
 		total, movies, maxScore, err := request.Param.SearchMovie()
+		log.Info("aaaaaa movie search finish. total:%d, err:%v", total, err)
 		if err != nil {
 			request.movieChannel <- nil
 			continue
