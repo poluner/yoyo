@@ -44,10 +44,10 @@ type searchMovieRequest struct {
 }
 
 type searchAllResult struct {
-	Movie  *movieResult  `json:"movie"`
-	Album  *albumResult  `json:"album"`
-	Song   *songResult   `json:"song"`
-	Singer *Singer       `json:"singer"`
+	Movie  movieResult  `json:"movie"`
+	Album  albumResult  `json:"album"`
+	Song   songResult   `json:"song"`
+	Singer Singer       `json:"singer"`
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
@@ -64,18 +64,20 @@ func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
 	searchMovieChannel <- movieRequest
 
 	result = &searchAllResult{}
-	select {
-	case singer := <-singerRequest.singerChannel:
-		result.Singer = singer
-	case song := <-songRequest.songChannel:
-		result.Song = song
-	case album := <-albumRequest.albumChannel:
-		result.Album = album
-	case movie := <-movieRequest.movieChannel:
-		result.Movie = movie
-	case <-time.After(time.Second * 1):
-		err = errors.New("search all timeout")
-		return
+	for i := 0; i < 4; i++ {
+		select {
+		case singer := <-singerRequest.singerChannel:
+			result.Singer = *singer
+		case song := <-songRequest.songChannel:
+			result.Song = *song
+		case album := <-albumRequest.albumChannel:
+			result.Album = *album
+		case movie := <-movieRequest.movieChannel:
+			result.Movie = *movie
+		case <-time.After(time.Second * 1):
+			err = errors.New("search all timeout")
+			return
+		}
 	}
 	return
 }
