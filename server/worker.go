@@ -11,10 +11,10 @@ import (
 var (
 	downloadChannel = make(chan string, 1000)
 
-	searchSingerChannel = make(chan searchSingerRequest, 100)
-	searchSongChannel   = make(chan searchSongRequest, 100)
-	searchAlbumChannel  = make(chan searchAlbumRequest, 100)
-	searchMovieChannel  = make(chan searchMovieRequest, 100)
+	searchSingerChannel = make(chan *searchSingerRequest, 100)
+	searchSongChannel   = make(chan *searchSongRequest, 100)
+	searchAlbumChannel  = make(chan *searchAlbumRequest, 100)
+	searchMovieChannel  = make(chan *searchMovieRequest, 100)
 )
 
 type downloadParam struct {
@@ -52,14 +52,14 @@ func SearchSingerWorker() {
 		total, singers, err := request.Param.SearchSinger()
 		log.Info("aaaaaa singer search finish. total:%d, err:%v", total, err)
 		if err != nil || total == 0 {
-			request.singerChannel <- nil
+			request.Channel <- nil
 			continue
 		}
 
 		singer := singers[0]
 		input := strings.TrimSpace(request.Param.Text)
 		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
-			request.singerChannel <- *singer
+			request.Channel <- singer
 		}
 		log.Info("aaaaaa singer channel input finish. result: %+v", singer)
 	}
@@ -73,7 +73,7 @@ func SearchSongWorker() {
 		total, songs, maxScore, err := request.Param.SearchSong()
 		log.Info("aaaaaa song search finish. total:%d, err:%v", total, err)
 		if err != nil {
-			request.songChannel <- nil
+			request.Channel <- nil
 			continue
 		}
 
@@ -82,7 +82,7 @@ func SearchSongWorker() {
 			MaxScore: maxScore,
 			Data: songs,
 		}
-		request.songChannel <- result
+		request.Channel <- &result
 		log.Info("aaaaaa song channel input finish. result: %+v", result)
 	}
 }
@@ -95,7 +95,7 @@ func SearchAlbumWorker() {
 		total, albums, maxScore, err := request.Param.SearchAlbum()
 		log.Info("aaaaaa album search finish. total:%d, err:%v", total, err)
 		if err != nil {
-			request.albumChannel <- nil
+			request.Channel <- nil
 			continue
 		}
 
@@ -104,7 +104,7 @@ func SearchAlbumWorker() {
 			MaxScore: maxScore,
 			Data: albums,
 		}
-		request.albumChannel <- result
+		request.Channel <- &result
 		log.Info("aaaaaa album channel input finish. result: %+v", result)
 	}
 }
@@ -117,7 +117,7 @@ func SearchMovieWorker() {
 		total, movies, maxScore, err := request.Param.SearchMovie()
 		log.Info("aaaaaa movie search finish. total:%d, err:%v", total, err)
 		if err != nil {
-			request.movieChannel <- nil
+			request.Channel <- nil
 			continue
 		}
 
@@ -126,7 +126,7 @@ func SearchMovieWorker() {
 			MaxScore: maxScore,
 			Data: movies,
 		}
-		request.movieChannel <- result
+		request.Channel <- &result
 		log.Info("aaaaaa movie channel input finish. result: %+v", result)
 	}
 }

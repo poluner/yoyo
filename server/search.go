@@ -26,57 +26,69 @@ type songResult struct {
 
 type searchSingerRequest struct {
 	Param         searchParam
-	singerChannel chan Singer
+	Channel       chan *Singer
 }
 
 type searchSongRequest struct {
 	Param         searchParam
-	songChannel   chan songResult
+	Channel       chan *songResult
 }
 
 type searchAlbumRequest struct {
 	Param         searchParam
-	albumChannel   chan albumResult
+	Channel   chan *albumResult
 }
 
 type searchMovieRequest struct {
 	Param         searchParam
-	movieChannel   chan movieResult
+	Channel   chan *movieResult
 }
 
 type searchAllResult struct {
-	Movie  movieResult  `json:"movie"`
-	Album  albumResult  `json:"album"`
-	Song   songResult   `json:"song"`
-	Singer Singer       `json:"singer"`
+	Movie  *movieResult  `json:"movie"`
+	Album  *albumResult  `json:"album"`
+	Song   *songResult   `json:"song"`
+	Singer *Singer       `json:"singer"`
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
-	singerRequest := searchSingerRequest{Param: *p}
-	searchSingerChannel <- singerRequest
+	singerRequest := searchSingerRequest{
+		Param: *p,
+		Channel: make(chan *Singer, 1),
+	}
+	searchSingerChannel <- &singerRequest
 
-	songRequest := searchSongRequest{Param: *p}
-	searchSongChannel <- songRequest
+	songRequest := searchSongRequest{
+		Param: *p,
+		Channel: make(chan *songResult, 1),
+	}
+	searchSongChannel <- &songRequest
 
-	albumRequest := searchAlbumRequest{Param: *p}
-	searchAlbumChannel <- albumRequest
+	albumRequest := searchAlbumRequest{
+		Param: *p,
+		Channel: make(chan *albumResult, 1),
+	}
+	searchAlbumChannel <- &albumRequest
 
-	movieRequest := searchMovieRequest{Param: *p}
-	searchMovieChannel <- movieRequest
+	movieRequest := searchMovieRequest{
+		Param: *p,
+		Channel: make(chan *movieResult, 1),
+	}
+	searchMovieChannel <- &movieRequest
 
 	result = &searchAllResult{}
 	for i := 0; i < 4; i++ {
 		select {
-		case singer := <-singerRequest.singerChannel:
+		case singer := <-singerRequest.Channel:
 			result.Singer = singer
 			log.Info("aaaaaa singer channel output data. data:%+v", singer)
-		case song := <-songRequest.songChannel:
+		case song := <-songRequest.Channel:
 			result.Song = song
 			log.Info("aaaaaa song channel output data. data:%+v", song)
-		case album := <-albumRequest.albumChannel:
+		case album := <-albumRequest.Channel:
 			result.Album = album
 			log.Info("aaaaaa album channel output data. data:%+v", album)
-		case movie := <-movieRequest.movieChannel:
+		case movie := <-movieRequest.Channel:
 			result.Movie = movie
 			log.Info("aaaaaa movie channel output data. data:%+v", movie)
 		case <-time.After(time.Second * 1):
