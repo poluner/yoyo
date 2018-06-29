@@ -61,6 +61,7 @@ func SearchSingerWorker() {
 		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
 			request.singerChannel <- singer
 		}
+		log.Info("aaaaaa singer channel input finish. result: %+v", singer)
 	}
 }
 
@@ -82,6 +83,7 @@ func SearchSongWorker() {
 			Data: songs,
 		}
 		request.songChannel <- &result
+		log.Info("aaaaaa song channel input finish. result: %+v", result)
 	}
 }
 
@@ -103,6 +105,7 @@ func SearchAlbumWorker() {
 			Data: albums,
 		}
 		request.albumChannel <- &result
+		log.Info("aaaaaa album channel input finish. result: %+v", result)
 	}
 }
 
@@ -124,5 +127,6 @@ func SearchMovieWorker() {
 			Data: movies,
 		}
 		request.movieChannel <- &result
+		log.Info("aaaaaa movie channel input finish. result: %+v", result)
 	}
 }
