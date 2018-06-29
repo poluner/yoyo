@@ -47,13 +47,10 @@ func DownloadTorrentWorker() {
 func SearchSingerWorker() {
 	for {
 		request := <-searchSingerChannel
-		log.Info("aaaaaa singer request: %+v", request)
 
 		total, singers, err := request.Param.SearchSinger()
-		log.Info("aaaaaa singer search finish. total:%d, err:%v", total, err)
 		if err != nil || total == 0 {
 			request.Channel <- nil
-			log.Info("aaaaaa singer channel input finish. result: nil")
 			continue
 		}
 
@@ -61,8 +58,9 @@ func SearchSingerWorker() {
 		input := strings.TrimSpace(request.Param.Text)
 		if strings.ToLower(input) ==  strings.ToLower(singer.Title) {
 			request.Channel <- singer
+		} else {
+			request.Channel <- nil
 		}
-		log.Info("aaaaaa singer channel input finish. result: %+v", singer)
 	}
 }
 

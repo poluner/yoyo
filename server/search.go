@@ -56,6 +56,7 @@ func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
 		Param: *p,
 		Channel: make(chan *Singer, 1),
 	}
+	singerRequest.Param.Limit = 1
 	searchSingerChannel <- &singerRequest
 
 	songRequest := searchSongRequest{
