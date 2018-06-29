@@ -11,10 +11,10 @@ import (
 var (
 	downloadChannel = make(chan string, 1000)
 
-	searchSingerChannel = make(chan *searchSingerRequest, 100)
-	searchSongChannel   = make(chan *searchSongRequest, 100)
-	searchAlbumChannel  = make(chan *searchAlbumRequest, 100)
-	searchMovieChannel  = make(chan *searchMovieRequest, 100)
+	searchSingerChannel = make(chan searchSingerRequest, 100)
+	searchSongChannel   = make(chan searchSongRequest, 100)
+	searchAlbumChannel  = make(chan searchAlbumRequest, 100)
+	searchMovieChannel  = make(chan searchMovieRequest, 100)
 )
 
 type downloadParam struct {

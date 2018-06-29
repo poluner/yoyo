@@ -52,16 +52,16 @@ type searchAllResult struct {
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
-	singerRequest := &searchSingerRequest{Param: *p}
+	singerRequest := searchSingerRequest{Param: *p}
 	searchSingerChannel <- singerRequest
 
-	songRequest := &searchSongRequest{Param: *p}
+	songRequest := searchSongRequest{Param: *p}
 	searchSongChannel <- songRequest
 
-	albumRequest := &searchAlbumRequest{Param: *p}
+	albumRequest := searchAlbumRequest{Param: *p}
 	searchAlbumChannel <- albumRequest
 
-	movieRequest := &searchMovieRequest{Param: *p}
+	movieRequest := searchMovieRequest{Param: *p}
 	searchMovieChannel <- movieRequest
 
 	result = &searchAllResult{}
