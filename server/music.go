@@ -93,7 +93,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float6
 		return
 	}
 
-	if res.Hits != nil {
+	if res.Hits != nil && res.Hits.MaxScore != nil {
 		maxScore = *(res.Hits.MaxScore)
 	}
 	total = res.TotalHits()
@@ -154,7 +154,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 		return
 	}
 
-	if res.Hits != nil {
+	if res.Hits != nil && res.Hits.MaxScore != nil {
 		maxScore = *(res.Hits.MaxScore)
 	}
 	total = res.TotalHits()

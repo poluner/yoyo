@@ -146,7 +146,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 		return
 	}
 
-	if res.Hits != nil {
+	if res.Hits != nil && res.Hits.MaxScore != nil {
 		maxScore = *(res.Hits.MaxScore)
 	}
 	total = res.TotalHits()
