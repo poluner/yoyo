@@ -3,6 +3,7 @@ package server
 import (
 	"time"
 	"errors"
+	log "github.com/alecthomas/log4go"
 )
 
 type movieResult struct {
@@ -44,10 +45,10 @@ type searchMovieRequest struct {
 }
 
 type searchAllResult struct {
-	Movie  movieResult  `json:"movie"`
-	Album  albumResult  `json:"album"`
-	Song   songResult   `json:"song"`
-	Singer Singer       `json:"singer"`
+	Movie  *movieResult  `json:"movie"`
+	Album  *albumResult  `json:"album"`
+	Song   *songResult   `json:"song"`
+	Singer *Singer       `json:"singer"`
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
@@ -67,14 +68,19 @@ func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
 	for i := 0; i < 4; i++ {
 		select {
 		case singer := <-singerRequest.singerChannel:
-			result.Singer = *singer
+			result.Singer = singer
+			log.Info("aaaaaa singer channel output data. data:%+v", singer)
 		case song := <-songRequest.songChannel:
-			result.Song = *song
+			result.Song = song
+			log.Info("aaaaaa song channel output data. data:%+v", song)
 		case album := <-albumRequest.albumChannel:
-			result.Album = *album
+			result.Album = album
+			log.Info("aaaaaa album channel output data. data:%+v", album)
 		case movie := <-movieRequest.movieChannel:
-			result.Movie = *movie
+			result.Movie = movie
+			log.Info("aaaaaa movie channel output data. data:%+v", movie)
 		case <-time.After(time.Second * 1):
+			log.Info("aaaaaa time out")
 			err = errors.New("search all timeout")
 			return
 		}
