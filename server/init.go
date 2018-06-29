@@ -92,4 +92,9 @@ func init() {
 	instanceId, _ = getInstanceId()
 
 	go DownloadTorrentWorker()
+
+	go SearchSingerWorker()
+	go SearchSongWorker()
+	go SearchMovieWorker()
+	go SearchAlbumWorker()
 }
