@@ -3,8 +3,6 @@ package server
 import (
 	"time"
 	"errors"
-	"context"
-	"github.com/aws/aws-xray-sdk-go/xray"
 )
 
 type movieResult struct {
@@ -53,47 +51,16 @@ type searchAllResult struct {
 }
 
 func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "all-search")
-	defer seg.Close(err)
-
-	singerRequest := &searchSingerRequest{
-		Param: searchParam{
-			Text: p.Text,
-			Offset: p.Offset,
-			Limit: p.Limit,
-			ctx: context.Background(),
-		},
-	}
+	singerRequest := &searchSingerRequest{Param: *p}
 	searchSingerChannel <- singerRequest
 
-	songRequest := &searchSongRequest{
-		Param: searchParam{
-			Text: p.Text,
-			Offset: p.Offset,
-			Limit: p.Limit,
-			ctx: context.Background(),
-		},
-	}
+	songRequest := &searchSongRequest{Param: *p}
 	searchSongChannel <- songRequest
 
-	albumRequest := &searchAlbumRequest{
-		Param: searchParam{
-			Text: p.Text,
-			Offset: p.Offset,
-			Limit: p.Limit,
-			ctx: context.Background(),
-		},
-	}
+	albumRequest := &searchAlbumRequest{Param: *p}
 	searchAlbumChannel <- albumRequest
 
-	movieRequest := &searchMovieRequest{
-		Param: searchParam{
-			Text: p.Text,
-			Offset: p.Offset,
-			Limit: p.Limit,
-			ctx: context.Background(),
-		},
-	}
+	movieRequest := &searchMovieRequest{Param: *p}
 	searchMovieChannel <- movieRequest
 
 	result = &searchAllResult{}
