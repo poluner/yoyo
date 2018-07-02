@@ -1,3 +1,4 @@
+// 聚合搜索
 package server
 
 import (
