@@ -93,11 +93,20 @@ func (p *suggestParam) TorrentSuggest() (result []string, err error) {
 
 	result = make([]string, 0, p.Size)
 	search := esClient.Search().Index(resourceIndex).Type(resourceType)
-	completionSuggester := elastic.NewCompletionSuggester("completion-suggest").
-		Text(p.Text).Field("name2").SkipDuplicates(true).Size(p.Size)
-	termSuggester := elastic.NewTermSuggester("term-suggest").Text(p.Text).
-		Field("name").Size(1).SuggestMode("popular")
-	search = search.Suggester(completionSuggester).Suggester(termSuggester)
+	if p.Type == "" {
+		completionSuggester := elastic.NewCompletionSuggester("completion-suggest").
+			Text(p.Text).Field("name2").SkipDuplicates(true).Size(p.Size)
+		termSuggester := elastic.NewTermSuggester("term-suggest").Text(p.Text).
+			Field("name").Size(1).SuggestMode("popular")
+		search = search.Suggester(completionSuggester).Suggester(termSuggester)
+	} else {
+		completionSuggester := elastic.NewCompletionSuggester("completion-suggest").
+			Text(p.Text).Field("title2").SkipDuplicates(true).Size(p.Size)
+		termSuggester := elastic.NewTermSuggester("term-suggest").Text(p.Text).
+			Field("title").Size(1).SuggestMode("popular")
+		search = search.Suggester(completionSuggester).Suggester(termSuggester)
+	}
+
 	searchResult, err := search.Do(p.ctx)
 	if err != nil {
 		return

@@ -83,7 +83,6 @@ func (p *searchParam) SearchAll() (result *searchAllResult, err error) {
 		select {
 		case singer := <-singerRequest.Channel:
 			result.Singer = singer
-			log.Info("aaaaaa singer channel output data. data:%+v", singer)
 		case song := <-songRequest.Channel:
 			result.Song = song
 		case album := <-albumRequest.Channel:

@@ -28,7 +28,7 @@ var (
 	}
 
 	s3bucket          = "torrenthub"
-	hotSingerIds = []string{
+	hotSingerIds      = []string{
 		"singer7786",
 		"singer110",
 		"singer119593",
