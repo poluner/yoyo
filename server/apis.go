@@ -90,7 +90,7 @@ func Suggest(c *gin.Context) {
 	param.ctx = c.Request.Context()
 
 	var result []string
-	if param.Type == "" || param.Type == "imdb" {
+	if param.Type == "" {
 		result, err = param.TorrentSuggest()
 	} else {
 		result, err = param.Suggest()

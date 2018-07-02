@@ -71,7 +71,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float6
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "song"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("title", input)))
+			elastic.NewMatchQuery("title", input).Boost(2.0)))
 		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(boolQuery).Highlight(highlight)
 		search = search.Sort("_score", false)
@@ -81,6 +81,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float6
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("singer_id", p.Singer))
 		search = search.Query(boolQuery)
 		search = search.Sort("title.keyword", true)
+		search = search.Sort("release", false)
 	} else {
 		query := elastic.NewBoolQuery().Must(elastic.NewTermQuery("type", "song"))
 		search = search.Query(query)
@@ -132,7 +133,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 			Should(elastic.NewTermQuery("type", "playlist")).
 			Should(elastic.NewTermQuery("type", "album")))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("title", input)))
+			elastic.NewMatchQuery("title", input).Boost(2.0)))
 		highlight := elastic.NewHighlight().Field("title")
 		search = search.Query(boolQuery).Highlight(highlight)
 		search = search.Sort("_score", false)

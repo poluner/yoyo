@@ -114,7 +114,7 @@ func SearchMovieWorker() {
 
 		result := movieResult{
 			Total: total,
-			MaxScore: maxScore / 10.0,
+			MaxScore: maxScore / 5.0,
 			Data: movies,
 		}
 		request.Channel <- &result
