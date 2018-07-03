@@ -56,10 +56,11 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 
 	// 删除一些软件
 	if strings.Contains(name, "microsoft") ||
+		strings.Contains(name, "windows") ||
 		strings.Contains(name, "adobe") ||
-			strings.Contains(name, "keygen") ||
-				strings.Contains(name, "cracked") ||
-					strings.Contains(name, "setup") {
+		strings.Contains(name, "keygen") ||
+		strings.Contains(name, "cracked") ||
+		strings.Contains(name, "setup") {
 		return
 	}
 
