@@ -58,7 +58,7 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 	if strings.Contains(name, "microsoft") ||
 		strings.Contains(name, "adobe") ||
 			strings.Contains(name, "keygen") ||
-				strings.Contains(name, "install") ||
+				strings.Contains(name, "cracked") ||
 					strings.Contains(name, "setup") {
 		return
 	}
