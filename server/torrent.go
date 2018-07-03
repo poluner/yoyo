@@ -48,6 +48,11 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 	item.CollectedAt = time.Now()
 	item.Type = "torrent"
 
+	// 不添加可执行文件
+	if strings.HasSuffix(item.Name, ".exe") {
+		return
+	}
+
 	for _, fileItem := range m.Files {
 		if !strings.HasPrefix(fileItem.Path[0], "_____") {
 			item.Files = append(item.Files, fileItem)
