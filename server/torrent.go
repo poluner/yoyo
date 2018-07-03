@@ -49,7 +49,13 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 	item.Type = "torrent"
 
 	// 不添加可执行文件
-	if strings.HasSuffix(item.Name, ".exe") || strings.HasSuffix(item.Name, ".EXE") {
+	name := strings.ToLower(item.Name)
+	if strings.HasSuffix(name, ".exe") {
+		return
+	}
+
+	// 删除一些软件
+	if strings.Contains(name, "microsoft") || strings.Contains(name, "adobe"){
 		return
 	}
 
