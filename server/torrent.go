@@ -50,7 +50,7 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 
 	// 不添加可执行文件
 	name := strings.ToLower(item.Name)
-	if strings.HasSuffix(name, ".exe") {
+	if strings.HasSuffix(name, ".exe") || strings.HasSuffix(name, ".iso") {
 		return
 	}
 
