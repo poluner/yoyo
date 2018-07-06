@@ -150,7 +150,7 @@ func QueryVideo(ctx context.Context, filmIds []string) (videoMap map[string][]Vi
 	}
 
 	var records []IMDBVideo
-	err = dbConn.Where("film_id in (?)", filmIds).Find(ctx, &records).Error
+	err = dbConn.Where("film_id in (?)", filmIds).Limit(10).Find(ctx, &records).Error
 	if err != nil {
 		return
 	}
