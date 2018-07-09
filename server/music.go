@@ -108,7 +108,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float6
 			continue
 		}
 
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
@@ -176,7 +176,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 			mget = mget.Add(s)
 		}
 
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		item.Highlight = hit.Highlight
 		result = append(result, &item)
 	}
@@ -253,7 +253,7 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 			mget = mget.Add(s)
 		}
 
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		result = append(result, &item)
 	}
 
@@ -315,7 +315,7 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 	if err != nil {
 		return
 	}
-	album.Poster = musicImagePattern.ReplaceAllString(album.Poster, "480x480")
+	album.Poster = musicImagePattern.ReplaceAllString(album.Poster, "175x175")
 
 	if album.SongId != nil && len(album.SongId) > 0 {
 		mget := esClient.Mget()
@@ -337,7 +337,7 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 				if e != nil {
 					continue
 				}
-				item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+				item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 				songs = append(songs, &item)
 			}
 		}
@@ -382,7 +382,7 @@ func (p *mgetParam) GetAlbums() (result map[string]*Album, err error) {
 		if e != nil {
 			continue
 		}
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		result[item.Id] = &item
 	}
 
@@ -419,7 +419,7 @@ func (p *mgetParam) GetSongs() (result map[string]*Song, err error) {
 		if e != nil {
 			continue
 		}
-		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+		item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 		result[item.Id] = &item
 	}
 
@@ -562,7 +562,7 @@ func (p *getParam) GetCollection() (result *Album, err error) {
 				if e != nil {
 					continue
 				}
-				item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "480x480")
+				item.Poster = musicImagePattern.ReplaceAllString(item.Poster, "175x175")
 				songs = append(songs, &item)
 			}
 		}

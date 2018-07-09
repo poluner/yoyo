@@ -43,9 +43,14 @@ type Resource struct {
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
 
-// 爬取的海报链接不是高平图片,需要转成高清链接
+// 爬取的海报链接不是高清图片,需要转成高清链接
 func imdbPoster(poster string) string {
 	return sizeFormatPattern.ReplaceAllString(poster, ".jpg")
+}
+
+// 爬取的海报链接不是高清图片,需要转成高清链接
+func youtubePoster(poster string) string {
+	return strings.Replace(poster, "maxresdefault", "mqdefault", 1)
 }
 
 // 网站名称的第一个小写字母变大写
@@ -225,6 +230,7 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 			item.Cracked = crackedSite[item.Genre[0]]
 			item.Genre[0] = mvSiteProcess(item.Genre[0])
 		}
+		item.Poster = youtubePoster(item.Poster)
 		result = append(result, &item)
 	}
 
@@ -350,6 +356,7 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 			resource.Cracked = crackedSite[resource.Genre[0]]
 			resource.Genre[0] = mvSiteProcess(resource.Genre[0])
 		}
+		resource.Poster = youtubePoster(resource.Poster)
 	}
 
 	cache, e = json.Marshal(&resource)
@@ -397,6 +404,7 @@ func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 				item.Cracked = crackedSite[item.Genre[0]]
 				item.Genre[0] = mvSiteProcess(item.Genre[0])
 			}
+			item.Poster = youtubePoster(item.Poster)
 		} else if item.Type == "imdb" {
 			item.Youtube = youtubeMap[item.Id]
 			item.Poster = imdbPoster(item.Poster)
