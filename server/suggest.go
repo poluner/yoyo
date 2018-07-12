@@ -24,7 +24,7 @@ func (p *suggestParam) Suggest() (result []string, err error) {
 	result = make([]string, 0, p.Size)
 	search := esClient.Search().Index(suggestIndex).Type(suggestType)
 
-	query := elastic.NewMatchQuery("title", p.Text).Operator("and")
+	query := elastic.NewMatchQuery("title", p.Text).Operator("and").Analyzer("standard")
 	suggester := elastic.NewTermSuggester("term-suggest").Text(p.Text).
 		Field("title").Size(p.Size).SuggestMode("always")
 	search = search.Query(query).Suggester(suggester)

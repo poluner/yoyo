@@ -38,7 +38,7 @@ func main() {
 	}
 	router := gin.New()
 	metricPath := fmt.Sprintf("/%s/metrics", server.ProjectName)
-	router.Use(server.Metrics(metricPath))
+	router.Use(server.Metrics())
 	router.Use(server.Recovery())
 
 	// 监控接口
