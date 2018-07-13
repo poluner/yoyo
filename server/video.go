@@ -17,6 +17,7 @@ var (
 type Resource struct {
 	Id         string               `json:"id"`
 	Type       string               `json:"type"`
+	PType      string               `json:"p_type,omitempty"`
 	Title      string               `json:"title"`
 	Alias      string               `json:"alias,omitempty"`
 	Year       int                  `json:"year,omitempty"`

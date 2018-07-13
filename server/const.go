@@ -13,6 +13,8 @@ const (
 	suggestIndex = "suggest"
 	suggestType  = "doc"
 
+	whatsAppRedisList = "whatsapp_status_list"
+
 	noError       = 0
 	internalErr   = 100
 	paramsInvalid = 200

@@ -68,6 +68,13 @@ type mgetParam struct {
 	ctx      context.Context
 }
 
+type listParam struct {
+	Offset   int       `form:"offset"`
+	Limit    int       `form:"limit"`
+
+	ctx      context.Context
+}
+
 
 func Suggest(c *gin.Context) {
 	var (
@@ -957,6 +964,34 @@ func SearchAll(c *gin.Context) {
 	if result == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"result": "search failed",
+			"code":   internalErr,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "ok",
+		"code":   noError,
+		"data":   result,
+	})
+}
+
+func WhatsappList(c *gin.Context) {
+	var (
+		err   error
+		param listParam
+	)
+
+	c.BindQuery(&param)
+	if param.Limit == 0 {
+		param.Limit = 10
+	}
+	param.ctx = c.Request.Context()
+	result, err := param.WhatsApp()
+
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"result": "query failed",
 			"code":   internalErr,
 		})
 		return

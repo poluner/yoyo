@@ -84,6 +84,25 @@ func (IMDBVideo) TableName() string {
 	return "imdb_video"
 }
 
+type WhatsApp struct {
+	Id         uint64    `gorm:"column:id;type:bigint;primary_key" json:"id"`
+	ResourceId string    `gorm:"column:resource_id;type:varchar(20)" json:"-"`
+	Title      string    `gorm:"column:title;type:varchar(500)" json:"title,omitempty"`
+	Tag        string    `gorm:"column:tag;type:varchar(100)" json:"tag,omitempty"`
+	Poster     string    `gorm:"column:poster;type:varchar(100)" json:"poster"`
+	Slate      string    `gorm:"column:slate;type:varchar(100)" json:"slate,omitempty"`
+	Language   string    `gorm:"column:Language;type:varchar(10)" json:"-"`
+	Kind       string    `gorm:"column:kind;type:varchar(12)" json:"kind"`
+	Height     int32     `gorm:"column:height;type:int" json:"height"`
+	Width      int32     `gorm:"column:width;type:int" json:"width"`
+	Duration   int32     `gorm:"column:duration;type:int" json:"duration,omitempty"`
+	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp" json:"-"`
+}
+
+func (WhatsApp) TableName() string {
+	return "whatsapp"
+}
+
 type YoutubeItem struct {
 	Name      string `json:"name"`
 	PlayUrl   string `json:"play_url"`
@@ -229,5 +248,15 @@ func QueryCollections(ctx context.Context, collectionIds []string) (collections 
 	}
 
 	err = dbConn.Where("id in (?)", collectionIds).Find(ctx, &collections).Error
+	return
+}
+
+func QueryWhatsapp(ctx context.Context, resourceIds []string) (collections []WhatsApp, err error) {
+	if resourceIds == nil || len(resourceIds) == 0 {
+		collections = []WhatsApp{}
+		return
+	}
+
+	err = dbConn.Where("id in (?)", resourceIds).Find(ctx, &collections).Error
 	return
 }
