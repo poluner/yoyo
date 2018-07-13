@@ -257,6 +257,6 @@ func QueryWhatsapp(ctx context.Context, resourceIds []string) (collections []Wha
 		return
 	}
 
-	err = dbConn.Where("id in (?)", resourceIds).Find(ctx, &collections).Error
+	err = dbConn.Where("resource_id in (?)", resourceIds).Find(ctx, &collections).Error
 	return
 }
