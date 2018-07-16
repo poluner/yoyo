@@ -86,8 +86,6 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 
 	_, err = esClient.Index().Index(resourceIndex).Type(
 		resourceType).Id(infohash).BodyJson(item).Do(ctx)
-	log.Info(infohash)
-	log.Info("%+v", item)
 	return
 }
 
@@ -174,7 +172,6 @@ func Upload(ctx context.Context, infohash string, data []byte) (err error) {
 	if e != nil {
 		// 解析种子并把种子放入es中
 		meta, infohash, ee := parseTorrent(data)
-		log.Info(infohash)
 		if ee != nil {
 			err  = ee
 			return

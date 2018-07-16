@@ -25,7 +25,6 @@ type downloadParam struct {
 func DownloadTorrentWorker() {
 	for {
 		infohash := <- downloadChannel
-		log.Info("infohash: %s", infohash)
 
 		payload := downloadParam{Infohash: infohash}
 		body, err := json.Marshal(&payload)
