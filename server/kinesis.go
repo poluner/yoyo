@@ -4,6 +4,7 @@ import (
 	"time"
 	"context"
 	"net/http"
+	log "github.com/alecthomas/log4go"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kinesis"
 	"github.com/satori/go.uuid"
@@ -34,5 +35,6 @@ func (e *KEvent) Push(ctx context.Context) (err error) {
 		StreamName:   aws.String(kinesisStream),
 		PartitionKey: aws.String(id.String()),
 	})
+	log.Info("kinesis: %+v, %v", result, err)
 	return
 }
