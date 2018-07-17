@@ -51,7 +51,7 @@ func imdbPoster(poster string) string {
 
 // 爬取的海报链接不是高清图片,需要转成高清链接
 func youtubePoster(poster string) string {
-	return strings.Replace(poster, "maxresdefault", "mqdefault", 1)
+	return strings.Replace(poster, "maxresdefault", "hqdefault", 1)
 }
 
 // 网站名称的第一个小写字母变大写
