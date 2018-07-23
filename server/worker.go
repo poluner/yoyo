@@ -1,47 +1,16 @@
 package server
 
 import (
-	"bytes"
 	"strings"
-	"net/http"
-	log "github.com/alecthomas/log4go"
 )
 
 
 var (
-	downloadChannel = make(chan string, 1000)
-
 	searchSingerChannel = make(chan *searchSingerRequest, 100)
 	searchSongChannel   = make(chan *searchSongRequest, 100)
 	searchAlbumChannel  = make(chan *searchAlbumRequest, 100)
 	searchMovieChannel  = make(chan *searchMovieRequest, 100)
 )
-
-type downloadParam struct {
-	Infohash string `json:"infohash"`
-}
-
-
-func DownloadTorrentWorker() {
-	for {
-		infohash := <- downloadChannel
-
-		payload := downloadParam{Infohash: infohash}
-		body, err := json.Marshal(&payload)
-		if err != nil {
-			log.Error(err)
-		}
-
-		res, err := http.Post(downloadUrl, "application/json", bytes.NewBuffer(body))
-		if err != nil {
-			log.Error(err)
-		}
-
-		if res != nil {
-			res.Body.Close()
-		}
-	}
-}
 
 func SearchSingerWorker() {
 	for {

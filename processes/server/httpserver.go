@@ -46,7 +46,6 @@ func main() {
 
 	router.GET("/yoyo/suggest", server.Suggest)
 	router.GET("/yoyo/search", server.SearchBT)
-	router.POST("/yoyo/update", server.UpdateBTMetaInfo)
 	router.GET("/yoyo/movie/search", server.SearchMovie)
 	router.GET("/yoyo/mv/search", server.SearchMV)
 	router.GET("/yoyo/movie/discover", server.DiscoverMovie)

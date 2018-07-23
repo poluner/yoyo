@@ -69,7 +69,7 @@ func (m *metaInfo) insertEs(ctx context.Context, infohash string, hot int) (err 
 			item.Files = append(item.Files, fileItem)
 		}
 
-		if fileItem.Path[0] == "Ultra XVid Codec Pack.exe " {
+		if fileItem.Path[0] == "Ultra XVid Codec Pack.exe" {
 			return
 		}
 	}
@@ -134,33 +134,6 @@ func parseTorrent(data []byte) (meta metaInfo, infohash string, err error) {
 	} else {
 		err = errors.New("no files or length key")
 	}
-	return
-}
-
-func (p *updateParam) UpdateTorrent() (err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "es-update")
-	defer seg.Close(err)
-
-	_, e := esClient.Get().Index(resourceIndex).Type(resourceType).Id(p.Infohash).Do(p.ctx)
-
-	if e != nil {
-		// not found
-		if p.Meta.Name != "" {
-			err = p.Meta.insertEs(p.ctx, p.Infohash, p.Hot)
-		}
-	} else {
-		// found
-		if p.Hot != 0 {
-			script := elastic.NewScript("ctx._source.hot=params.hot;ctx._source.collected_at=params.collected_at").Params(
-				map[string]interface{}{
-					"hot":          p.Hot,
-					"collected_at": time.Now(),
-				},
-			)
-			_, err = esClient.Update().Index(resourceIndex).Type(resourceType).Id(p.Infohash).Script(script).Do(p.ctx)
-		}
-	}
-
 	return
 }
 

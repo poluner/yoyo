@@ -65,7 +65,7 @@ func updateEs(bt *updatePost) (err error) {
 		return
 	}
 
-	url := "http://api.watchnow.n0909.com/yoyo/update"
+	url := "http://api.watchnow.n0909.com/swallow/torrent/update"
 	log.Info("%s %s", url, postValue)
 	_, err = httpClient.Post(url, "application/json", bytes.NewBuffer(postValue))
 	return

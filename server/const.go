@@ -21,7 +21,6 @@ const (
 	UploadErr     = 300
 
 	maxResultWindow = 10000
-	downloadUrl = "http://api.watchnow.n0909.com/swallow/torrent"
 )
 
 var (

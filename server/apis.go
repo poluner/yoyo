@@ -34,14 +34,6 @@ type metaInfo struct {
 	Files  []FileItem `json:"files,omitempty"`
 }
 
-type updateParam struct {
-	Meta     metaInfo `json:"info"`
-	Hot      int      `json:"hot"`
-	Infohash string   `json:"infohash"`
-
-	ctx      context.Context
-}
-
 type discoverParam struct {
 	Genre    string    `form:"genre"`
 	Year     int       `form:"year"`
@@ -169,38 +161,6 @@ func SearchBT(c *gin.Context) {
 		"code":   noError,
 		"total":  total,
 		"data":   result,
-	})
-}
-
-func UpdateBTMetaInfo(c *gin.Context) {
-	var (
-		param updateParam
-		err error
-	)
-	decoder := json.NewDecoder(c.Request.Body)
-	if err = decoder.Decode(&param); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"result": err,
-			"code":   paramsInvalid,
-		})
-		return
-	}
-
-	param.ctx = c.Request.Context()
-	downloadChannel <- param.Infohash
-
-	err = param.UpdateTorrent()
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"result": err,
-			"code":   paramsInvalid,
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"result": "ok",
-		"code":   noError,
 	})
 }
 
@@ -486,7 +446,7 @@ func UploadTorrent(c *gin.Context) {
 
 	record := TorrentDownload{
 		InfoHash: infohash,
-		DownloadUrl: fmt.Sprintf("http://d1saub1vswkfmx.cloudfront.net/%s.torrent", infohash),
+		DownloadUrl: fmt.Sprintf("http://dl.hottorrentscdn.com/%s.torrent", infohash),
 		Kind: 1,
 	}
 	dbConn.Create(ctx, &record)
