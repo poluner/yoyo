@@ -219,6 +219,7 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 		item := EsTorrent{}
 		e := json.Unmarshal(*hit.Source, &item)
 		if e != nil {
+			log.Info(e)
 			continue
 		}
 

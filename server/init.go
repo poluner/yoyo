@@ -91,8 +91,6 @@ func init() {
 	// 获取机器的instance id
 	instanceId, _ = getInstanceId()
 
-	go DownloadTorrentWorker()
-
 	go SearchSingerWorker()
 	go SearchSongWorker()
 	go SearchMovieWorker()
