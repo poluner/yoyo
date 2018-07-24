@@ -879,13 +879,12 @@ func SearchSinger(c *gin.Context) {
 
 func HotSinger(c *gin.Context) {
 	var param mgetParam
+	var cancel context.CancelFunc
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
-	param.ctx = ctx
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), time.Second)
 	defer cancel()
 
 	param.Ids = hotSingerIds
-	time.Sleep(2 * time.Second)
 	result, err := param.HotSinger()
 
 	if err != nil {
