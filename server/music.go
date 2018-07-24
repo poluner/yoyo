@@ -163,6 +163,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 		total = maxResultWindow
 	}
 
+	var querySinger bool
 	mget := esClient.Mget()
 	for _, hit := range res.Hits.Hits {
 		item := Album{}
@@ -172,6 +173,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 		}
 
 		if item.SingerId != nil && len(item.SingerId) != 0 {
+			querySinger = true
 			s := elastic.NewMultiGetItem().Index(songIndex).Type(songType).Id(item.SingerId[0])
 			mget = mget.Add(s)
 		}
@@ -181,27 +183,29 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 		result = append(result, &item)
 	}
 
-	singers, e := mget.Do(ctx)
-	if e == nil {
-		singerNameMap := make(map[string]string)
-		for _, hit := range singers.Docs {
-			if hit.Source == nil {
-				continue
+	if querySinger {
+		singers, e := mget.Do(ctx)
+		if e == nil {
+			singerNameMap := make(map[string]string)
+			for _, hit := range singers.Docs {
+				if hit.Source == nil {
+					continue
+				}
+
+				item := Singer{}
+				e := json.Unmarshal(*hit.Source, &item)
+				if e != nil {
+					continue
+				}
+				singerNameMap[item.Id] = item.Title
 			}
 
-			item := Singer{}
-			e := json.Unmarshal(*hit.Source, &item)
-			if e != nil {
-				continue
-			}
-			singerNameMap[item.Id] = item.Title
-		}
-
-		for _, item := range result {
-			if item.SingerId != nil && len(item.SingerId) != 0 {
-				name, ok := singerNameMap[item.SingerId[0]]
-				if ok {
-					item.Singer = []string{name}
+			for _, item := range result {
+				if item.SingerId != nil && len(item.SingerId) != 0 {
+					name, ok := singerNameMap[item.SingerId[0]]
+					if ok {
+						item.Singer = []string{name}
+					}
 				}
 			}
 		}
