@@ -146,7 +146,7 @@ func SearchBT(c *gin.Context) {
 		RequestHeader: c.Request.Header,
 		CreateTime:    time.Now(),
 	}
-	event.Push(c.Request.Context())
+	event.Push(param.ctx)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -200,7 +200,7 @@ func SearchMovie(c *gin.Context) {
 		RequestHeader: c.Request.Header,
 		CreateTime:    time.Now(),
 	}
-	event.Push(c.Request.Context())
+	event.Push(param.ctx)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -254,7 +254,7 @@ func SearchMV(c *gin.Context) {
 		RequestHeader: c.Request.Header,
 		CreateTime:    time.Now(),
 	}
-	event.Push(c.Request.Context())
+	event.Push(param.ctx)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -492,7 +492,7 @@ func SearchSong(c *gin.Context) {
 		RequestHeader: c.Request.Header,
 		CreateTime:    time.Now(),
 	}
-	event.Push(c.Request.Context())
+	event.Push(param.ctx)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -560,7 +560,7 @@ func SearchAlbum(c *gin.Context) {
 		RequestHeader: c.Request.Header,
 		CreateTime:    time.Now(),
 	}
-	event.Push(c.Request.Context())
+	event.Push(param.ctx)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -880,8 +880,12 @@ func SearchSinger(c *gin.Context) {
 func HotSinger(c *gin.Context) {
 	var param mgetParam
 
-	param.ctx = c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Second)
+	param.ctx = ctx
+	defer cancel()
+
 	param.Ids = hotSingerIds
+	time.Sleep(2 * time.Second)
 	result, err := param.HotSinger()
 
 	if err != nil {

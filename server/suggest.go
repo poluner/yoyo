@@ -12,7 +12,7 @@ type SuggestItem struct {
 }
 
 func (p *suggestParam) Suggest() (result []string, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "es-suggest")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "es-suggest")
 	defer seg.Close(err)
 
 	input := strings.TrimSpace(p.Text)
@@ -30,7 +30,7 @@ func (p *suggestParam) Suggest() (result []string, err error) {
 	search = search.Query(query).Suggester(suggester)
 	search = search.Sort("score", false).Sort("_score", false)
 	search = search.Size(p.Size)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -82,7 +82,7 @@ func (p *suggestParam) Suggest() (result []string, err error) {
 }
 
 func (p *suggestParam) TorrentSuggest() (result []string, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "torrent-suggest")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "torrent-suggest")
 	defer seg.Close(err)
 
 	input := strings.TrimSpace(p.Text)
@@ -107,7 +107,7 @@ func (p *suggestParam) TorrentSuggest() (result []string, err error) {
 		search = search.Suggester(completionSuggester).Suggester(termSuggester)
 	}
 
-	searchResult, err := search.Do(p.ctx)
+	searchResult, err := search.Do(ctx)
 	if err != nil {
 		return
 	}

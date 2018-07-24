@@ -138,7 +138,7 @@ func parseTorrent(data []byte) (meta metaInfo, infohash string, err error) {
 }
 
 func Upload(ctx context.Context, infohash string, data []byte) (err error) {
-	_, seg := xray.BeginSubsegment(ctx, "upload-torrent")
+	sCtx, seg := xray.BeginSubsegment(ctx, "upload-torrent")
 	defer seg.Close(err)
 
 	_, e := esClient.Get().Index(resourceIndex).Type(resourceType).Id(infohash).Do(ctx)
@@ -150,14 +150,14 @@ func Upload(ctx context.Context, infohash string, data []byte) (err error) {
 			return
 		}
 
-		ee = meta.insertEs(ctx, infohash, 1)
+		ee = meta.insertEs(sCtx, infohash, 1)
 		if ee != nil {
 			log.Error("infohash: %s, meta: %+v insert failed", infohash, meta)
 		}
 	}
 
 	key := fmt.Sprintf("%s.torrent", infohash)
-	_, err = uploader.UploadWithContext(ctx, &s3manager.UploadInput{
+	_, err = uploader.UploadWithContext(sCtx, &s3manager.UploadInput{
 		Bucket: &s3bucket,
 		Key: &key,
 		Body:   bytes.NewReader(data),
@@ -166,7 +166,7 @@ func Upload(ctx context.Context, infohash string, data []byte) (err error) {
 }
 
 func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "torrent-search")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "torrent-search")
 	defer seg.Close(err)
 
 	result = make([]*Torrent, 0, p.Limit)
@@ -203,7 +203,7 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -241,7 +241,7 @@ func (p *searchParam) SearchBT() (total int64, result []*Torrent, err error) {
 		result = append(result, &t)
 	}
 
-	downloadMap, _ := QueryTorrentUrl(p.ctx, infohashs)
+	downloadMap, _ := QueryTorrentUrl(ctx, infohashs)
 	for _, item := range result {
 		item.TorrentUrl = downloadMap[item.Infohash]
 	}

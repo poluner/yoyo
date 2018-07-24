@@ -68,7 +68,7 @@ func mvSiteProcess(site string) string {
 }
 
 func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err error) {
-	_, seg := xray.BeginSubsegment(ctx, "torrent-mget")
+	sCtx, seg := xray.BeginSubsegment(ctx, "torrent-mget")
 	defer seg.Close(err)
 
 	result = make([]Torrent, 0, len(infohashs))
@@ -82,12 +82,12 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 		mget = mget.Add(item)
 	}
 
-	res, err := mget.Do(ctx)
+	res, err := mget.Do(sCtx)
 	if err != nil {
 		return
 	}
 
-	downloadMap, _ := QueryTorrentUrl(ctx, infohashs)
+	downloadMap, _ := QueryTorrentUrl(sCtx, infohashs)
 	for _, hit := range res.Docs {
 		item := EsTorrent{}
 		e := json.Unmarshal(*hit.Source, &item)
@@ -109,7 +109,7 @@ func multiGetBT(ctx context.Context, infohashs []string) (result []Torrent, err 
 }
 
 func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore float64, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "movie-search")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "movie-search")
 	defer seg.Close(err)
 
 	result = make([]*Resource, 0, p.Limit)
@@ -147,7 +147,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -173,7 +173,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 		result = append(result, &item)
 	}
 
-	youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
+	youtubeMap, _ := QueryYoutube(ctx, filmIds)
 	for _, item := range result {
 		item.Youtube = youtubeMap[item.Id]
 
@@ -184,7 +184,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 }
 
 func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "mv-search")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "mv-search")
 	defer seg.Close(err)
 
 	result = make([]*Resource, 0, p.Limit)
@@ -209,7 +209,7 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -239,7 +239,7 @@ func (p *searchParam) SearchMV() (total int64, result []*Resource, err error) {
 }
 
 func (p *discoverParam) DiscoverMovie() (total int64, result []*Resource, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "movie-discover")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "movie-discover")
 	defer seg.Close(err)
 
 	result = make([]*Resource, 0, p.Limit)
@@ -281,7 +281,7 @@ func (p *discoverParam) DiscoverMovie() (total int64, result []*Resource, err er
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -306,7 +306,7 @@ func (p *discoverParam) DiscoverMovie() (total int64, result []*Resource, err er
 }
 
 func (p *getParam) GetResource() (result *Resource, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "resource-get")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "resource-get")
 	defer seg.Close(err)
 
 	cache, e := redisConn.Get(p.Id).Bytes()
@@ -321,7 +321,7 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 	}
 
 	get := esClient.Get().Index(resourceIndex).Type(resourceType).Id(p.Id)
-	res, err := get.Do(p.ctx)
+	res, err := get.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -337,12 +337,12 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 
 	if resource.Type == "imdb" {
 		filmIds := []string{p.Id}
-		youtubeMap, _ := QueryYoutube(p.ctx, filmIds)
-		videoMap, _ := QueryVideo(p.ctx, filmIds)
+		youtubeMap, _ := QueryYoutube(ctx, filmIds)
+		videoMap, _ := QueryVideo(ctx, filmIds)
 		resource.Youtube = youtubeMap[p.Id]
 
-		infohashs, _ := QueryTorrent(p.ctx, p.Id)
-		resource.BT, _ = multiGetBT(p.ctx, infohashs)
+		infohashs, _ := QueryTorrent(ctx, p.Id)
+		resource.BT, _ = multiGetBT(ctx, infohashs)
 
 		resource.Poster = imdbPoster(resource.Poster)
 		resource.SlateCover = imdbPoster(resource.SlateCover)
@@ -369,7 +369,7 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 }
 
 func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "resource-mget")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "resource-mget")
 	defer seg.Close(err)
 
 	result = make(map[string]*Resource)
@@ -383,12 +383,12 @@ func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 		mget = mget.Add(item)
 	}
 
-	res, err := mget.Do(p.ctx)
+	res, err := mget.Do(ctx)
 	if err != nil {
 		return
 	}
 
-	youtubeMap, _ := QueryYoutube(p.ctx, p.Ids)
+	youtubeMap, _ := QueryYoutube(ctx, p.Ids)
 	for _, hit := range res.Docs {
 		if hit.Source == nil {
 			continue

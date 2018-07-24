@@ -57,7 +57,7 @@ type Album struct {
 }
 
 func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float64, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "song-search")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "song-search")
 	defer seg.Close(err)
 
 	result = make([]*Song, 0, p.Limit)
@@ -89,7 +89,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float6
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -117,7 +117,7 @@ func (p *searchParam) SearchSong() (total int64, result []*Song, maxScore float6
 }
 
 func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore float64, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "album-search")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "album-search")
 	defer seg.Close(err)
 
 	result = make([]*Album, 0, p.Limit)
@@ -150,7 +150,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -181,7 +181,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 		result = append(result, &item)
 	}
 
-	singers, e := mget.Do(p.ctx)
+	singers, e := mget.Do(ctx)
 	if e == nil {
 		singerNameMap := make(map[string]string)
 		for _, hit := range singers.Docs {
@@ -211,7 +211,7 @@ func (p *searchParam) SearchAlbum() (total int64, result []*Album, maxScore floa
 }
 
 func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "album-discover")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "album-discover")
 	defer seg.Close(err)
 
 	result = make([]*Album, 0, p.Limit)
@@ -230,7 +230,7 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 	search = search.Sort("release", p.Ascend == 1)
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -257,7 +257,7 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 		result = append(result, &item)
 	}
 
-	singers, e := mget.Do(p.ctx)
+	singers, e := mget.Do(ctx)
 	if e == nil {
 		singerNameMap := make(map[string]string)
 		for _, hit := range singers.Docs {
@@ -287,7 +287,7 @@ func (p *discoverParam) DiscoverAlbum() (total int64, result []*Album, err error
 }
 
 func (p *getParam) GetAlbum() (result *Album, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "album-get")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "album-get")
 	defer seg.Close(err)
 
 	cache, e := redisConn.Get(p.Id).Bytes()
@@ -302,7 +302,7 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 	}
 
 	get := esClient.Get().Index(songIndex).Type(songType).Id(p.Id)
-	res, err := get.Do(p.ctx)
+	res, err := get.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -325,7 +325,7 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 		}
 
 		songs := make([]*Song, 0, len(album.SongId))
-		res, e := mget.Do(p.ctx)
+		res, e := mget.Do(ctx)
 		if e == nil {
 			for _, hit := range res.Docs {
 				if hit.Source == nil {
@@ -353,7 +353,7 @@ func (p *getParam) GetAlbum() (result *Album, err error) {
 }
 
 func (p *mgetParam) GetAlbums() (result map[string]*Album, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "album-mget")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "album-mget")
 	defer seg.Close(err)
 
 	result = make(map[string]*Album)
@@ -367,7 +367,7 @@ func (p *mgetParam) GetAlbums() (result map[string]*Album, err error) {
 		mget = mget.Add(item)
 	}
 
-	res, err := mget.Do(p.ctx)
+	res, err := mget.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -390,7 +390,7 @@ func (p *mgetParam) GetAlbums() (result map[string]*Album, err error) {
 }
 
 func (p *mgetParam) GetSongs() (result map[string]*Song, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "song-mget")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "song-mget")
 	defer seg.Close(err)
 
 	result = make(map[string]*Song)
@@ -404,7 +404,7 @@ func (p *mgetParam) GetSongs() (result map[string]*Song, err error) {
 		mget = mget.Add(item)
 	}
 
-	res, err := mget.Do(p.ctx)
+	res, err := mget.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -427,7 +427,7 @@ func (p *mgetParam) GetSongs() (result map[string]*Song, err error) {
 }
 
 func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "singer-search")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "singer-search")
 	defer seg.Close(err)
 
 	result = make([]*Singer, 0, p.Limit)
@@ -453,7 +453,7 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 	}
 
 	search = search.From(p.Offset).Size(p.Limit)
-	res, err := search.Do(p.ctx)
+	res, err := search.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -477,7 +477,7 @@ func (p *searchParam) SearchSinger() (total int64, result []*Singer, err error) 
 }
 
 func (p *mgetParam) HotSinger() (result []*Singer, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "singer-hot")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "singer-hot")
 	defer seg.Close(err)
 
 	mget := esClient.Mget()
@@ -486,7 +486,7 @@ func (p *mgetParam) HotSinger() (result []*Singer, err error) {
 		mget = mget.Add(item)
 	}
 
-	res, err := mget.Do(p.ctx)
+	res, err := mget.Do(ctx)
 	if err != nil {
 		return
 	}
@@ -509,7 +509,7 @@ func (p *mgetParam) HotSinger() (result []*Singer, err error) {
 }
 
 func (p *getParam) GetCollection() (result *Album, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "collection-get")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "collection-get")
 	defer seg.Close(err)
 
 	cache, e := redisConn.Get(p.Id).Bytes()
@@ -523,7 +523,7 @@ func (p *getParam) GetCollection() (result *Album, err error) {
 		return
 	}
 
-	records, err := QueryCollections(p.ctx, []string{p.Id})
+	records, err := QueryCollections(ctx, []string{p.Id})
 	if err != nil || len(records) == 0 {
 		return
 	}
@@ -550,7 +550,7 @@ func (p *getParam) GetCollection() (result *Album, err error) {
 		}
 
 		songs := make([]*Song, 0, len(album.SongId))
-		res, e := mget.Do(p.ctx)
+		res, e := mget.Do(ctx)
 		if e == nil {
 			for _, hit := range res.Docs {
 				if hit.Source == nil {
@@ -578,7 +578,7 @@ func (p *getParam) GetCollection() (result *Album, err error) {
 }
 
 func (p *mgetParam) GetCollections() (result map[string]*Album, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "collection-mget")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "collection-mget")
 	defer seg.Close(err)
 
 	result = make(map[string]*Album)
@@ -586,7 +586,7 @@ func (p *mgetParam) GetCollections() (result map[string]*Album, err error) {
 		return
 	}
 
-	records, err := QueryCollections(p.ctx, p.Ids)
+	records, err := QueryCollections(ctx, p.Ids)
 	if err != nil {
 		return
 	}
@@ -616,9 +616,9 @@ func (p *mgetParam) GetCollections() (result map[string]*Album, err error) {
 }
 
 func (p *mgetParam) GetSongsUrl() (result map[string]map[string]string, err error) {
-	_, seg := xray.BeginSubsegment(p.ctx, "song-url-mget")
+	ctx, seg := xray.BeginSubsegment(p.ctx, "song-url-mget")
 	defer seg.Close(err)
 
-	result, err = QuerySongUrl(p.ctx, p.Ids)
+	result, err = QuerySongUrl(ctx, p.Ids)
 	return
 }
