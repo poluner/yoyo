@@ -72,6 +72,7 @@ func Suggest(c *gin.Context) {
 	var (
 		err   error
 		param suggestParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -86,7 +87,8 @@ func Suggest(c *gin.Context) {
 	if param.Size == 0 {
 		param.Size = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 
 	var result []string
 	if param.Type == "" {
@@ -113,6 +115,7 @@ func SearchBT(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -127,7 +130,8 @@ func SearchBT(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, err := param.SearchBT()
 
 	// kinesis 监控
@@ -168,6 +172,7 @@ func SearchMovie(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -182,7 +187,8 @@ func SearchMovie(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, _, err := param.SearchMovie()
 
 	event := KEvent{
@@ -222,6 +228,7 @@ func SearchMV(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -236,7 +243,8 @@ func SearchMV(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, err := param.SearchMV()
 
 	event := KEvent{
@@ -276,6 +284,7 @@ func DiscoverMovie(c *gin.Context) {
 	var (
 		err   error
 		param discoverParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -293,7 +302,8 @@ func DiscoverMovie(c *gin.Context) {
 	if param.Sort == "" {
 		param.Sort = "rating_value"
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, err := param.DiscoverMovie()
 
 	if err != nil {
@@ -316,6 +326,7 @@ func GetResource(c *gin.Context) {
 	var (
 		err   error
 		param getParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -327,7 +338,8 @@ func GetResource(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.GetResource()
 
 	if err != nil {
@@ -357,6 +369,7 @@ func GetResources(c *gin.Context) {
 	var (
 		err   error
 		param mgetParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -368,7 +381,8 @@ func GetResources(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.GetResources()
 
 	if err != nil {
@@ -387,7 +401,8 @@ func GetResources(c *gin.Context) {
 }
 
 func UploadTorrent(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx , cancel := context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	infohash := c.PostForm("infohash")
 	if infohash != "" {
 		var record TorrentDownload
@@ -460,6 +475,7 @@ func SearchSong(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -474,7 +490,8 @@ func SearchSong(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, _, err := param.SearchSong()
 
 	event := KEvent{
@@ -528,6 +545,7 @@ func SearchAlbum(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -542,7 +560,8 @@ func SearchAlbum(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, _, err := param.SearchAlbum()
 
 	event := KEvent{
@@ -582,6 +601,7 @@ func DiscoverAlbum(c *gin.Context) {
 	var (
 		err   error
 		param discoverParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -596,7 +616,8 @@ func DiscoverAlbum(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, err := param.DiscoverAlbum()
 
 	if err != nil {
@@ -619,6 +640,7 @@ func GetAlbum(c *gin.Context) {
 	var (
 		err   error
 		param getParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -630,7 +652,8 @@ func GetAlbum(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 
 	var result *Album
 	if param.Type == "collection" {
@@ -666,6 +689,7 @@ func GetAlbums(c *gin.Context) {
 	var (
 		err   error
 		param mgetParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -677,7 +701,8 @@ func GetAlbums(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	var result map[string]*Album
 	if param.Type == "collection" {
 		result, err = param.GetCollections()
@@ -704,6 +729,7 @@ func GetSongs(c *gin.Context) {
 	var (
 		err   error
 		param mgetParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -715,7 +741,8 @@ func GetSongs(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.GetSongs()
 
 	if err != nil {
@@ -737,6 +764,7 @@ func GetCollection(c *gin.Context) {
 	var (
 		err   error
 		param getParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -748,7 +776,8 @@ func GetCollection(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.GetCollection()
 
 	if err != nil {
@@ -778,6 +807,7 @@ func GetCollections(c *gin.Context) {
 	var (
 		err   error
 		param mgetParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -789,7 +819,8 @@ func GetCollections(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.GetCollections()
 
 	if err != nil {
@@ -811,6 +842,7 @@ func GetSongUrl(c *gin.Context) {
 	var (
 		err   error
 		param mgetParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -822,7 +854,8 @@ func GetSongUrl(c *gin.Context) {
 		return
 	}
 
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.GetSongsUrl()
 
 	if err != nil {
@@ -844,6 +877,7 @@ func SearchSinger(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -858,7 +892,8 @@ func SearchSinger(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	total, result, err := param.SearchSinger()
 
 	if err != nil {
@@ -878,10 +913,12 @@ func SearchSinger(c *gin.Context) {
 }
 
 func HotSinger(c *gin.Context) {
-	var param mgetParam
-	var cancel context.CancelFunc
+	var (
+		param mgetParam
+		cancel context.CancelFunc
+	)
 
-	param.ctx , cancel = context.WithTimeout(c.Request.Context(), time.Second)
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
 	defer cancel()
 
 	param.Ids = hotSingerIds
@@ -907,6 +944,7 @@ func SearchAll(c *gin.Context) {
 	var (
 		err   error
 		param searchParam
+		cancel context.CancelFunc
 	)
 
 	err = c.BindQuery(&param)
@@ -921,7 +959,9 @@ func SearchAll(c *gin.Context) {
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, _ := param.SearchAll()
 
 	if result == nil {
@@ -943,13 +983,15 @@ func WhatsappList(c *gin.Context) {
 	var (
 		err   error
 		param listParam
+		cancel context.CancelFunc
 	)
 
 	c.BindQuery(&param)
 	if param.Limit == 0 {
 		param.Limit = 10
 	}
-	param.ctx = c.Request.Context()
+	param.ctx , cancel = context.WithTimeout(c.Request.Context(), 2 * time.Second)
+	defer cancel()
 	result, err := param.WhatsApp()
 
 	if err != nil {
