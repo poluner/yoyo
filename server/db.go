@@ -223,7 +223,7 @@ func QuerySongUrl(ctx context.Context, songId []string) (downloadMap map[string]
 	}
 
 	for _, record := range records {
-		signUrl, e := signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour * 1))
+		signUrl, e := signer.Sign(record.DownloadUrl, time.Now().Add(time.Hour * 12))
 		if e != nil {
 			continue
 		}
