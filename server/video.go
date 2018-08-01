@@ -126,9 +126,9 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("title", input).Boost(10.0).Operator("and"),
-			elastic.NewMatchQuery("actor", input).Boost(1.0).Operator("and"),
-			elastic.NewMatchQuery("director", input).Boost(1.0).Operator("and"),))
+			elastic.NewMatchQuery("title", input).Boost(5.0),
+			elastic.NewMatchQuery("actor", input).Boost(1.0),
+			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
 		query := elastic.NewFunctionScoreQuery().BoostMode("sum")
 		query = query.Query(boolQuery)
