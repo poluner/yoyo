@@ -40,6 +40,8 @@ type Resource struct {
 	Youtube    []YoutubeItem        `json:"youtube,omitempty"`
 	BT         []Torrent            `json:"bt,omitempty"`
 	Video      []VideoItem          `json:"video,omitempty"`
+	FileUrl    string               `json:"file_url,omitempty"`
+	HotStar    *HotStarMovie        `json:"hotstar,omitempty"`
 
 	Highlight   map[string][]string `json:"highlight,omitempty"`
 }
@@ -126,7 +128,7 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 		boolQuery := elastic.NewBoolQuery()
 		boolQuery = boolQuery.Must(elastic.NewTermQuery("type", "imdb"))
 		boolQuery = boolQuery.Must(elastic.NewBoolQuery().Should(
-			elastic.NewMatchQuery("title", input).Boost(5.0),
+			elastic.NewMatchQuery("title", input).Boost(3.0),
 			elastic.NewMatchQuery("actor", input).Boost(1.0),
 			elastic.NewMatchQuery("director", input).Boost(1.0),))
 
@@ -174,8 +176,10 @@ func (p *searchParam) SearchMovie() (total int64, result []*Resource, maxScore f
 	}
 
 	youtubeMap, _ := QueryYoutube(ctx, filmIds)
+	hotStarMap, _ := QueryHotStarMovie(ctx, filmIds)
 	for _, item := range result {
 		item.Youtube = youtubeMap[item.Id]
+		item.HotStar = hotStarMap[item.Id]
 
 		item.Poster = imdbPoster(item.Poster)
 		item.SlateCover = imdbPoster(item.SlateCover)
@@ -344,6 +348,9 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 		infohashs, _ := QueryTorrent(ctx, p.Id)
 		resource.BT, _ = multiGetBT(ctx, infohashs)
 
+		hotStarMap, _ := QueryHotStarMovie(ctx, filmIds)
+		resource.HotStar = hotStarMap[p.Id]
+
 		resource.Poster = imdbPoster(resource.Poster)
 		resource.SlateCover = imdbPoster(resource.SlateCover)
 
@@ -358,6 +365,9 @@ func (p *getParam) GetResource() (result *Resource, err error) {
 			resource.Genre[0] = mvSiteProcess(resource.Genre[0])
 		}
 		resource.Poster = youtubePoster(resource.Poster)
+
+		fileMap, _ := QueryYoutubeFile(ctx, []string{resource.Id})
+		resource.FileUrl = fileMap[resource.Id]
 	}
 
 	cache, e = json.Marshal(&resource)
@@ -389,6 +399,8 @@ func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 	}
 
 	youtubeMap, _ := QueryYoutube(ctx, p.Ids)
+	fileMap, _ := QueryYoutubeFile(ctx, p.Ids)
+	hotStarMap, _ := QueryHotStarMovie(ctx, p.Ids)
 	for _, hit := range res.Docs {
 		if hit.Source == nil {
 			continue
@@ -406,8 +418,10 @@ func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 				item.Genre[0] = mvSiteProcess(item.Genre[0])
 			}
 			item.Poster = youtubePoster(item.Poster)
+			item.FileUrl = fileMap[item.Id]
 		} else if item.Type == "imdb" {
 			item.Youtube = youtubeMap[item.Id]
+			item.HotStar = hotStarMap[item.Id]
 			item.Poster = imdbPoster(item.Poster)
 			item.SlateCover = imdbPoster(item.SlateCover)
 		}

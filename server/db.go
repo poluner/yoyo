@@ -103,6 +103,30 @@ func (WhatsApp) TableName() string {
 	return "whatsapp"
 }
 
+type YoutubeUpload struct {
+	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
+	VideoId   string    `gorm:"column:video_id;type:varchar(20)"`
+	FileUrl   string    `gorm:"column:play_url;type:varchar(100)"`
+	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
+}
+
+func (YoutubeUpload) TableName() string {
+	return "youtube_upload"
+}
+
+type HotStarMovie struct {
+	Id        uint64    `gorm:"column:id;type:bigint;primary_key" json:"-"`
+	ImdbId    string    `gorm:"column:imdb_id;type:varchar(15)" json:"-"`
+	Title     string    `gorm:"column:title;type:varchar(160)" json:"title"`
+	Poster    string    `gorm:"column:poster;type:varchar(100)" json:"cover"`
+	Slate     string    `gorm:"column:slate;type:varchar(100)" json:"play_url"`
+	Status    int8      `gorm:"column:status;type:tinyint" json:"-"`
+}
+
+func (HotStarMovie) TableName() string {
+	return "hotstar_movie"
+}
+
 type YoutubeItem struct {
 	Name      string `json:"name"`
 	PlayUrl   string `json:"play_url"`
@@ -258,5 +282,41 @@ func QueryWhatsapp(ctx context.Context, resourceIds []string) (collections []Wha
 	}
 
 	err = dbConn.Where("resource_id in (?)", resourceIds).Find(ctx, &collections).Error
+	return
+}
+
+func QueryYoutubeFile(ctx context.Context, youtubeId []string) (FileMap map[string]string, err error) {
+	FileMap = make(map[string]string)
+	if youtubeId == nil || len(youtubeId) == 0 {
+		return
+	}
+
+	var records []YoutubeUpload
+	err = dbConn.Where("video_id in (?)", youtubeId).Find(ctx, &records).Error
+	if err != nil {
+		return
+	}
+
+	for _, record := range records {
+		FileMap[record.VideoId] = record.FileUrl
+	}
+	return
+}
+
+func QueryHotStarMovie(ctx context.Context, imdbIds []string) (hotStarMap map[string]*HotStarMovie, err error) {
+	hotStarMap = make(map[string]*HotStarMovie)
+	if imdbIds == nil || len(imdbIds) == 0 {
+		return
+	}
+
+	var records []HotStarMovie
+	err = dbConn.Where("imdb_id in (?) and status = 1", imdbIds).Find(ctx, &records).Error
+	if err != nil {
+		return
+	}
+
+	for _, record := range records {
+		hotStarMap[record.ImdbId] = &record
+	}
 	return
 }
