@@ -106,7 +106,7 @@ func (WhatsApp) TableName() string {
 type YoutubeUpload struct {
 	Id        uint64    `gorm:"column:id;type:bigint;primary_key"`
 	VideoId   string    `gorm:"column:video_id;type:varchar(20)"`
-	FileUrl   string    `gorm:"column:play_url;type:varchar(100)"`
+	FileUrl   string    `gorm:"column:file_url;type:varchar(100)"`
 	CreatedAt time.Time `gorm:"column:created_at" sql:"DEFAULT:current_timestamp"`
 }
 

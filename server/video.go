@@ -398,9 +398,7 @@ func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 		return
 	}
 
-	youtubeMap, _ := QueryYoutube(ctx, p.Ids)
 	fileMap, _ := QueryYoutubeFile(ctx, p.Ids)
-	hotStarMap, _ := QueryHotStarMovie(ctx, p.Ids)
 	for _, hit := range res.Docs {
 		if hit.Source == nil {
 			continue
@@ -420,8 +418,6 @@ func (p *mgetParam) GetResources() (result map[string]*Resource, err error) {
 			item.Poster = youtubePoster(item.Poster)
 			item.FileUrl = fileMap[item.Id]
 		} else if item.Type == "imdb" {
-			item.Youtube = youtubeMap[item.Id]
-			item.HotStar = hotStarMap[item.Id]
 			item.Poster = imdbPoster(item.Poster)
 			item.SlateCover = imdbPoster(item.SlateCover)
 		}
