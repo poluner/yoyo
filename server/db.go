@@ -120,6 +120,7 @@ type HotStarMovie struct {
 	Title     string    `gorm:"column:title;type:varchar(160)" json:"title"`
 	Poster    string    `gorm:"column:poster;type:varchar(100)" json:"cover"`
 	Slate     string    `gorm:"column:slate;type:varchar(100)" json:"play_url"`
+	Duration  int       `gorm:"column:duration;type:int" json:"duration"`
 	Status    int8      `gorm:"column:status;type:tinyint" json:"-"`
 }
 
